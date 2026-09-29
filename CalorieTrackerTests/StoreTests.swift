@@ -167,6 +167,39 @@ struct StoreTests {
         #expect(try TargetStore.current(on: SyntheticWeek.today, in: context) == .defaults)
     }
 
+    @Test func settingTargetsKeepsHistory() throws {
+        let old = MacroTargets(calories: 2000, protein: 120, carbs: 200, fat: 70)
+        let start = LocalDate(iso: "2026-09-01")!
+        try TargetStore.set(old, from: start, in: context)
+        try TargetStore.set(.defaults, goalNote: "lose ~1 lb/week", from: SyntheticWeek.today, in: context)
+        #expect(try count(Targets.self) == 2)
+        #expect(try TargetStore.current(on: SyntheticWeek.today.adding(days: -1), in: context) == old)
+        #expect(try TargetStore.current(on: SyntheticWeek.today, in: context) == .defaults)
+        #expect(try TargetStore.goalNote(on: SyntheticWeek.today, in: context) == "lose ~1 lb/week")
+        #expect(try TargetStore.goalNote(on: start, in: context) == "")
+    }
+
+    @Test func sameDayTargetEditsReplaceThatDaysVersion() throws {
+        let day = SyntheticWeek.today
+        try TargetStore.set(.defaults, from: day, in: context)
+        var tweaked = MacroTargets.defaults
+        tweaked.protein = 150
+        try TargetStore.set(tweaked, from: day, in: context)
+        #expect(try count(Targets.self) == 1)
+        #expect(try TargetStore.current(on: day, in: context) == tweaked)
+    }
+
+    @Test func unchangedTargetsAddNoVersion() throws {
+        try TargetStore.set(.defaults, from: LocalDate(iso: "2026-09-01")!, in: context)
+        try TargetStore.set(.defaults, from: SyntheticWeek.today, in: context)
+        #expect(try count(Targets.self) == 1)
+    }
+
+    @Test func firstTargetsAreStoredEvenIfEqualToDefaults() throws {
+        try TargetStore.set(.defaults, from: SyntheticWeek.today, in: context)
+        #expect(try count(Targets.self) == 1)
+    }
+
     // MARK: Usual meals
 
     @Test func usualMealLogsWithItsStoredSource() throws {

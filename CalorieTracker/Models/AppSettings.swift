@@ -14,6 +14,13 @@ struct AppSettings {
         static let transcriptRetentionDays = "transcriptRetentionDays"
         static let modelID = "modelID"
         static let timeZoneID = "timeZoneID"
+        static let weightUnit = "weightUnit"
+    }
+
+    /// How weight is shown. Stored weights are always lb; this only changes display.
+    var weightUnit: WeightUnit {
+        get { defaults.string(forKey: Key.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? .lb }
+        nonmutating set { defaults.set(newValue.rawValue, forKey: Key.weightUnit) }
     }
 
     /// Days of meal-level detail kept before roll-up (D13).

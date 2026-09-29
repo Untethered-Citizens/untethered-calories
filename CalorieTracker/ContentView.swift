@@ -8,8 +8,22 @@ struct ContentView: View {
     @State private var today = LocalDate.today()
     @State private var remaining = Remaining(targets: .defaults, eaten: .zero)
     @State private var targets = MacroTargets.defaults
+    @State private var showingSettings = false
 
     var body: some View {
+        NavigationStack {
+            summary
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Settings", systemImage: "gearshape") { showingSettings = true }
+                    }
+                }
+        }
+        .sheet(isPresented: $showingSettings, onDismiss: refresh) { SettingsView() }
+        .task { refresh() }
+    }
+
+    private var summary: some View {
         VStack(spacing: 8) {
             Text(remaining.isOverCalories ? "\(-remaining.calories)" : "\(remaining.calories)")
                 .font(.system(size: 88, weight: .semibold, design: .rounded))
@@ -21,7 +35,6 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
         }
         .padding()
-        .task { refresh() }
     }
 
     private func refresh() {

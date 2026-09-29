@@ -15,6 +15,7 @@ struct SettingsTests {
         #expect(s.transcriptRetentionDays == 7)
         #expect(s.modelID == nil)
         #expect(s.timeZone == .current)
+        #expect(s.weightUnit == .lb)
     }
 
     @Test func roundTrips() {
@@ -29,5 +30,13 @@ struct SettingsTests {
         #expect(s.timeZone.identifier == "America/Los_Angeles")
         s.detailWindowDays = 0
         #expect(s.detailWindowDays == 1)
+        s.weightUnit = .kg
+        #expect(s.weightUnit == .kg)
+    }
+
+    @Test func weightUnitConversion() {
+        #expect(abs(WeightUnit.kg.fromPounds(171.6) - 77.84) < 0.01)
+        #expect(abs(WeightUnit.kg.toPounds(WeightUnit.kg.fromPounds(171.6)) - 171.6) < 1e-9)
+        #expect(WeightUnit.lb.fromPounds(171.6) == 171.6)
     }
 }

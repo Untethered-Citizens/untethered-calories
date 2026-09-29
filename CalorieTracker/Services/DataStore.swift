@@ -75,6 +75,38 @@ enum TargetStore {
     static func current(on date: LocalDate, in context: ModelContext) throws -> MacroTargets {
         TargetHistory.effective(on: date, in: try periods(in: context))
     }
+
+    /// The goal note of the version in force on `date`, if any.
+    static func goalNote(on date: LocalDate, in context: ModelContext) throws -> String {
+        try context.fetch(FetchDescriptor<Targets>())
+            .filter { $0.period.effectiveFrom <= date }
+            .max { $0.effectiveFromKey < $1.effectiveFromKey }?
+            .goalNote ?? ""
+    }
+
+    /// Records new targets from `date` onward, keeping earlier versions as history.
+    /// A second change on the same day edits that day's version instead of adding another.
+    /// Setting the targets that already apply is a no-op.
+    static func set(_ targets: MacroTargets, goalNote: String = "", from date: LocalDate,
+                    in context: ModelContext) throws {
+        let key = date.iso
+        var descriptor = FetchDescriptor<Targets>(predicate: #Predicate { $0.effectiveFromKey == key })
+        descriptor.fetchLimit = 1
+        if let sameDay = try context.fetch(descriptor).first {
+            sameDay.calories = targets.calories
+            sameDay.protein = targets.protein
+            sameDay.carbs = targets.carbs
+            sameDay.fat = targets.fat
+            sameDay.goalNote = goalNote
+        } else {
+            let hasHistory = try context.fetchCount(FetchDescriptor<Targets>()) > 0
+            let unchanged = try current(on: date, in: context) == targets
+                && TargetStore.goalNote(on: date, in: context) == goalNote
+            if hasHistory && unchanged { return }
+            context.insert(Targets(effectiveFrom: date, targets: targets, goalNote: goalNote))
+        }
+        try context.save()
+    }
 }
 
 /// Day totals across the detail window and rolled-up history.
