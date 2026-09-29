@@ -153,6 +153,26 @@ enum ModelRecommendation {
         models.filter { $0.id.hasPrefix("claude-sonnet") }.max { $0.createdAt < $1.createdAt }
     }
 
+    /// The family in an ID like "claude-sonnet-5-5" ("sonnet"). Nil if the ID doesn't follow that shape.
+    static func family(of id: String) -> String? {
+        let parts = id.split(separator: "-")
+        guard parts.count >= 3, parts[0] == "claude", parts[1].allSatisfy(\.isLetter) else { return nil }
+        return String(parts[1])
+    }
+
+    /// The current generation: the newest model in each family, newest first.
+    /// Models whose ID doesn't name a family are treated as current, so nothing unfamiliar is hidden.
+    static func current(in models: [AnthropicModel]) -> [AnthropicModel] {
+        var newestByFamily: [String: AnthropicModel] = [:]
+        var unfamiliar: [AnthropicModel] = []
+        for model in models {
+            guard let family = family(of: model.id) else { unfamiliar.append(model); continue }
+            if let seen = newestByFamily[family], seen.createdAt >= model.createdAt { continue }
+            newestByFamily[family] = model
+        }
+        return (Array(newestByFamily.values) + unfamiliar).sorted { $0.createdAt > $1.createdAt }
+    }
+
     /// The model to use after a list refresh: keep the user's choice while it's still offered,
     /// otherwise fall back to the recommendation.
     static func resolve(current: String?, in models: [AnthropicModel]) -> String? {

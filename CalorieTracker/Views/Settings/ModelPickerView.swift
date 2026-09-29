@@ -10,12 +10,25 @@ struct ModelPickerView: View {
     @State private var selected: String?
     @State private var failure: AnthropicError?
     @State private var loading = false
+    @State private var showingOlder = false
 
     private var recommendedID: String? { ModelRecommendation.recommended(in: models)?.id }
 
+    /// The current generation (newest per family) plus the user's choice if it's older.
     /// Recommended first, then newest first.
-    private var ordered: [AnthropicModel] {
-        models.sorted { a, b in
+    private var main: [AnthropicModel] {
+        let current = ModelRecommendation.current(in: models)
+        let chosenOlder = models.filter { $0.id == selected && !current.contains($0) }
+        return ordered(current + chosenOlder)
+    }
+
+    private var older: [AnthropicModel] {
+        let shown = Set(main.map(\.id))
+        return ordered(models.filter { !shown.contains($0.id) })
+    }
+
+    private func ordered(_ list: [AnthropicModel]) -> [AnthropicModel] {
+        list.sorted { a, b in
             if a.id == recommendedID { return true }
             if b.id == recommendedID { return false }
             return a.createdAt > b.createdAt
@@ -38,12 +51,24 @@ struct ModelPickerView: View {
             }
             if !models.isEmpty {
                 Section {
-                    ForEach(ordered) { model in
+                    ForEach(main) { model in
                         Button { choose(model) } label: { row(model) }
                             .tint(.primary)
                     }
                 } footer: {
                     Text("Sonnet is recommended. It's accurate with descriptions, nutrition labels and meal photos, at a moderate cost per entry. Larger models cost more each time you log.")
+                }
+                if !older.isEmpty {
+                    Section {
+                        DisclosureGroup(isExpanded: $showingOlder) {
+                            ForEach(older) { model in
+                                Button { choose(model) } label: { row(model) }
+                                    .tint(.primary)
+                            }
+                        } label: {
+                            Text("Show older models (\(older.count))")
+                        }
+                    }
                 }
             }
         }

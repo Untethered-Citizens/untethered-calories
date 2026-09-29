@@ -102,6 +102,20 @@ struct ModelRecommendationTests {
         #expect(ModelRecommendation.recommended(in: models.filter { !$0.id.contains("sonnet") }) == nil)
     }
 
+    @Test func familyComesFromTheID() {
+        #expect(ModelRecommendation.family(of: "claude-sonnet-9") == "sonnet")
+        #expect(ModelRecommendation.family(of: "claude-haiku-4-5-20251001") == "haiku")
+        #expect(ModelRecommendation.family(of: "claude-3-haiku-20240307") == nil)
+        #expect(ModelRecommendation.family(of: "something-else") == nil)
+    }
+
+    @Test func currentGenerationIsNewestPerFamily() {
+        let odd = AnthropicModel(id: "claude-3-haiku-20240307", displayName: "Old", createdAt: "2024-03-07T00:00:00Z")
+        let current = ModelRecommendation.current(in: models + [odd])
+        #expect(current.map(\.id) == ["claude-haiku-9", "claude-opus-9", "claude-sonnet-9", "claude-3-haiku-20240307"])
+        #expect(!current.contains { $0.id == "claude-sonnet-8" })
+    }
+
     @Test func keepsTheUsersChoiceWhileItIsOffered() {
         #expect(ModelRecommendation.resolve(current: "claude-opus-9", in: models) == "claude-opus-9")
         #expect(ModelRecommendation.resolve(current: "claude-retired", in: models) == "claude-sonnet-9")
