@@ -10,6 +10,7 @@ struct SettingsView: View {
     private let keyStore = APIKeyStore()
 
     @State private var maskedKey: String?
+    @State private var modelID: String?
     @State private var keyError: String?
     @State private var confirmingRemoval = false
     @State private var targets = MacroTargets.defaults
@@ -76,11 +77,21 @@ struct SettingsView: View {
 
     private var modelSection: some View {
         Section {
-            LabeledContent("Model", value: settings.modelID ?? "Not chosen yet")
+            if maskedKey != nil {
+                NavigationLink {
+                    ModelPickerView { modelID = settings.modelID }
+                } label: {
+                    LabeledContent("Model") { Text(modelID ?? "Choose").monospaced() }
+                }
+            } else {
+                LabeledContent("Model", value: modelID ?? "Not chosen yet")
+            }
         } header: {
             Text("Model")
         } footer: {
-            Text("You'll choose from Anthropic's current models once your key has been checked.")
+            Text(maskedKey == nil
+                 ? "Add your key to choose from Anthropic's current models."
+                 : "Sonnet is recommended for logging food.")
         }
     }
 
@@ -146,6 +157,7 @@ struct SettingsView: View {
     private func reloadKey() {
         do {
             maskedKey = try keyStore.load().map(APIKeyStore.masked)
+            modelID = settings.modelID
             keyError = nil
         } catch {
             maskedKey = nil

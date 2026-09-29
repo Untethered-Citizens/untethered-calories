@@ -1,0 +1,111 @@
+import Foundation
+import Testing
+@testable import CalorieTracker
+
+/// A fake network: returns canned responses in order and records the requests it saw.
+final class StubTransport: HTTPTransport, @unchecked Sendable {
+    enum Reply { case http(Int, String, [String: String] = [:]), failure(URLError) }
+    private var replies: [Reply]
+    private(set) var requests: [URLRequest] = []
+
+    init(_ replies: [Reply]) { self.replies = replies }
+
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests.append(request)
+        switch replies.removeFirst() {
+        case .failure(let error):
+            throw error
+        case .http(let status, let body, let headers):
+            let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: headers)!
+            return (Data(body.utf8), response)
+        }
+    }
+}
+
+/// Synthetic model IDs, so no test depends on which real models exist today.
+private func model(_ id: String, _ created: String) -> String {
+    #"{"type":"model","id":"\#(id)","display_name":"\#(id.uppercased())","created_at":"\#(created)T00:00:00Z"}"#
+}
+
+private func page(_ models: [String], hasMore: Bool = false, lastID: String? = nil) -> String {
+    let last = lastID.map { #""\#($0)""# } ?? "null"
+    return #"{"data":[\#(models.joined(separator: ","))],"has_more":\#(hasMore),"first_id":null,"last_id":\#(last)}"#
+}
+
+struct AnthropicClientTests {
+    let fakeKey = "sk-ant-test-0000000000000000000000WXYZ"
+
+    @Test func listsModelsNewestFirstWithHeaders() async throws {
+        let stub = StubTransport([.http(200, page([model("claude-old", "2025-01-01"), model("claude-new", "2026-06-01")]))])
+        let models = try await AnthropicClient(apiKey: fakeKey, transport: stub).listModels()
+        #expect(models.map(\.id) == ["claude-new", "claude-old"])
+        #expect(models.first?.displayName == "CLAUDE-NEW")
+
+        let sent = try #require(stub.requests.first)
+        #expect(sent.url?.path == "/v1/models")
+        #expect(sent.value(forHTTPHeaderField: "x-api-key") == fakeKey)
+        #expect(sent.value(forHTTPHeaderField: "anthropic-version") == "2023-06-01")
+        #expect(sent.url?.absoluteString.contains(fakeKey) == false) // the key never goes in the URL
+    }
+
+    @Test func followsPages() async throws {
+        let stub = StubTransport([
+            .http(200, page([model("a", "2026-01-01")], hasMore: true, lastID: "a")),
+            .http(200, page([model("b", "2025-01-01")])),
+        ])
+        let models = try await AnthropicClient(apiKey: fakeKey, transport: stub).listModels()
+        #expect(models.map(\.id) == ["a", "b"])
+        #expect(stub.requests.last?.url?.query?.contains("after_id=a") == true)
+    }
+
+    @Test(arguments: [
+        (401, AnthropicError.invalidKey),
+        (402, AnthropicError.billing("Out of credit")),
+        (403, AnthropicError.permissionDenied("Out of credit")),
+        (429, AnthropicError.rateLimited(retryAfter: 20)),
+        (500, AnthropicError.serverBusy),
+        (529, AnthropicError.serverBusy),
+        (404, AnthropicError.other(status: 404, message: "Out of credit")),
+    ])
+    func mapsHTTPErrors(status: Int, expected: AnthropicError) async {
+        let body = #"{"type":"error","error":{"type":"x","message":"Out of credit"}}"#
+        let stub = StubTransport([.http(status, body, ["retry-after": "20"])])
+        await #expect(throws: expected) {
+            try await AnthropicClient(apiKey: fakeKey, transport: stub).listModels()
+        }
+    }
+
+    @Test func offlineIsItsOwnError() async {
+        let stub = StubTransport([.failure(URLError(.notConnectedToInternet))])
+        await #expect(throws: AnthropicError.offline) {
+            try await AnthropicClient(apiKey: fakeKey, transport: stub).listModels()
+        }
+    }
+
+    @Test func errorMessagesNeverContainTheKey() {
+        let all: [AnthropicError] = [.invalidKey, .billing("b"), .permissionDenied("p"), .rateLimited(retryAfter: nil),
+                                     .serverBusy, .offline, .other(status: 418, message: "m")]
+        #expect(all.allSatisfy { !$0.userMessage.contains("sk-ant") })
+    }
+}
+
+struct ModelRecommendationTests {
+    let models = [
+        AnthropicModel(id: "claude-opus-9", displayName: "Opus 9", createdAt: "2026-09-01T00:00:00Z"),
+        AnthropicModel(id: "claude-sonnet-8", displayName: "Sonnet 8", createdAt: "2026-05-01T00:00:00Z"),
+        AnthropicModel(id: "claude-sonnet-9", displayName: "Sonnet 9", createdAt: "2026-08-01T00:00:00Z"),
+        AnthropicModel(id: "claude-haiku-9", displayName: "Haiku 9", createdAt: "2026-09-15T00:00:00Z"),
+    ]
+
+    @Test func recommendsTheNewestSonnet() {
+        #expect(ModelRecommendation.recommended(in: models)?.id == "claude-sonnet-9")
+        #expect(ModelRecommendation.recommended(in: models.filter { !$0.id.contains("sonnet") }) == nil)
+    }
+
+    @Test func keepsTheUsersChoiceWhileItIsOffered() {
+        #expect(ModelRecommendation.resolve(current: "claude-opus-9", in: models) == "claude-opus-9")
+        #expect(ModelRecommendation.resolve(current: "claude-retired", in: models) == "claude-sonnet-9")
+        #expect(ModelRecommendation.resolve(current: nil, in: models) == "claude-sonnet-9")
+        #expect(ModelRecommendation.resolve(current: nil, in: []) == nil)
+    }
+}
