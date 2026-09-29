@@ -107,6 +107,9 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            NavigationLink("Work out my targets") {
+                TargetHelperView { reloadTargets() }
+            }
         }
     }
 

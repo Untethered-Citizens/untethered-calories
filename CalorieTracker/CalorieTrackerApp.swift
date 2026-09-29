@@ -15,8 +15,24 @@ struct CalorieTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
         .modelContainer(container)
+    }
+}
+
+/// Shows the first-launch flow once, then the main screen.
+struct RootView: View {
+    @State private var onboarded = AppSettings().hasCompletedOnboarding
+
+    var body: some View {
+        if onboarded {
+            ContentView()
+        } else {
+            OnboardingView {
+                AppSettings().hasCompletedOnboarding = true
+                withAnimation { onboarded = true }
+            }
+        }
     }
 }

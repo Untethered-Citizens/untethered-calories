@@ -16,6 +16,7 @@ struct SettingsTests {
         #expect(s.modelID == nil)
         #expect(s.timeZone == .current)
         #expect(s.weightUnit == .lb)
+        #expect(!s.hasCompletedOnboarding)
     }
 
     @Test func roundTrips() {
@@ -32,6 +33,8 @@ struct SettingsTests {
         #expect(s.detailWindowDays == 1)
         s.weightUnit = .kg
         #expect(s.weightUnit == .kg)
+        s.hasCompletedOnboarding = true
+        #expect(s.hasCompletedOnboarding)
     }
 
     @Test func weightUnitConversion() {

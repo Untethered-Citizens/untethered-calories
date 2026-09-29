@@ -37,10 +37,10 @@ struct TargetsEditorView: View {
     var body: some View {
         Form {
             Section {
-                numberRow("Calories", value: $calories, unit: "cal")
-                numberRow("Protein", value: $protein, unit: "g")
-                numberRow("Carbs", value: $carbs, unit: "g")
-                numberRow("Fat", value: $fat, unit: "g")
+                NumberRow(label: "Calories", value: $calories, unit: "cal")
+                NumberRow(label: "Protein", value: $protein, unit: "g")
+                NumberRow(label: "Carbs", value: $carbs, unit: "g")
+                NumberRow(label: "Fat", value: $fat, unit: "g")
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Your macros add up to \(macroCalories.formatted()) calories.")
@@ -63,28 +63,13 @@ struct TargetsEditorView: View {
         }
         .navigationTitle("Daily targets")
         .navigationBarTitleDisplayMode(.inline)
+        .keyboardDoneButton()
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save", action: save).disabled(!isValid)
             }
         }
         .onAppear(perform: load)
-    }
-
-    private func numberRow(_ label: String, value: Binding<Int>, unit: String) -> some View {
-        LabeledContent(label) {
-            HStack(spacing: 4) {
-                // A text binding updates on every keystroke. `TextField(value:format:)` only
-                // commits on Return or focus loss, and the number pad has no Return key.
-                TextField(label, text: Binding(
-                    get: { value.wrappedValue == 0 ? "" : String(value.wrappedValue) },
-                    set: { value.wrappedValue = Int($0.filter(\.isNumber).prefix(5)) ?? 0 }))
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .monospacedDigit()
-                Text(unit).foregroundStyle(.secondary)
-            }
-        }
     }
 
     private func load() {

@@ -15,6 +15,13 @@ struct AppSettings {
         static let modelID = "modelID"
         static let timeZoneID = "timeZoneID"
         static let weightUnit = "weightUnit"
+        static let hasCompletedOnboarding = "hasCompletedOnboarding"
+    }
+
+    /// Set once the first-launch flow is finished, so it only shows once.
+    var hasCompletedOnboarding: Bool {
+        get { defaults.bool(forKey: Key.hasCompletedOnboarding) }
+        nonmutating set { defaults.set(newValue, forKey: Key.hasCompletedOnboarding) }
     }
 
     /// How weight is shown. Stored weights are always lb; this only changes display.
