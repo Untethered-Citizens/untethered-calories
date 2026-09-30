@@ -114,17 +114,26 @@ struct AnthropicClient: Sendable {
     }
 
     private func get<T: Decodable>(_ url: URL) async throws -> T {
+        try await send(request(url))
+    }
+
+    /// Sends a request and decodes the reply, turning failures into `AnthropicError`.
+    func send<T: Decodable>(_ request: URLRequest) async throws -> T {
         let data: Data
         let response: HTTPURLResponse
         do {
-            (data, response) = try await transport.send(request(url))
+            (data, response) = try await transport.send(request)
         } catch let error as URLError {
             throw Self.isOffline(error) ? AnthropicError.offline : AnthropicError.other(status: 0, message: error.localizedDescription)
         }
         guard (200..<300).contains(response.statusCode) else {
             throw Self.error(status: response.statusCode, data: data, headers: response)
         }
-        return try JSONDecoder().decode(T.self, from: data)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw AnthropicError.other(status: response.statusCode, message: "Anthropic's reply wasn't in the expected shape.")
+        }
     }
 
     static func error(status: Int, data: Data, headers: HTTPURLResponse) -> AnthropicError {

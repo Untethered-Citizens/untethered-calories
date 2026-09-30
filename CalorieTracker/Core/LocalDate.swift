@@ -39,6 +39,13 @@ struct LocalDate: Hashable, Comparable, Codable, Sendable, CustomStringConvertib
         self.day = c.day!
     }
 
+    /// Noon on this day in `timeZone`, for date pickers. Noon is safe from DST edges.
+    func date(in timeZone: TimeZone) -> Date {
+        var local = Calendar(identifier: .gregorian)
+        local.timeZone = timeZone
+        return local.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
+    }
+
     static func today(in timeZone: TimeZone = .current, now: Date = Date()) -> LocalDate {
         LocalDate(now, in: timeZone)
     }
