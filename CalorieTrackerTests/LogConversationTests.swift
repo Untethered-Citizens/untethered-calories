@@ -94,6 +94,7 @@ struct LogConversationTests {
         let first = try blocks(messages(request)[0])
         #expect((first[0]["text"] as? String)?.hasPrefix("<app_context>") == true)
         #expect((first[0]["text"] as? String)?.contains("Remaining today: 1785 kcal") == true)
+        #expect((first[0]["text"] as? String)?.contains("Default meal now: Lunch") == true) // 12:30
         #expect(first.last?["text"] as? String == "had a burrito")
         #expect(conversation.items.count == 2) // the user's bubble and the question
     }

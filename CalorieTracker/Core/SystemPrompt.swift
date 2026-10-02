@@ -30,8 +30,11 @@ enum SystemPrompt {
     propose it with basis "usual_meal_variation" and source "Estimate".
     - Round estimates to the nearest 5 kcal and whole grams. Don't invent precision.
     - Several foods in one message go in one call, one entry per separable food.
-    - meal is exactly one of Breakfast, Lunch, Dinner, Snack. If the user doesn't say, \
-    pick from the time of day. Back-dated entries use the date the food was eaten; \
+    - meal is exactly one of Breakfast, Lunch, Dinner, Snack. If the user names a meal \
+    ("for lunch", "last night's dinner"), use it. Otherwise use "Default meal now" from \
+    <app_context>; don't judge from the food. Everything in one message is one meal \
+    unless the user says otherwise. The default is for today only: for an earlier day \
+    with no meal named, ask which meal. Back-dated entries use the date the food was eaten; \
     resolve words like "yesterday" against the date in <app_context>.
 
     Integrity:
@@ -90,6 +93,7 @@ struct LogContext: Equatable, Sendable {
         let remaining = Remaining(targets: targets, eaten: eaten)
         var lines = ["<app_context>"]
         lines.append("Now: \(Self.dateTime(now, timeZone)) (\(timeZone.identifier))")
+        lines.append("Default meal now: \(Meal.default(at: now, in: timeZone).rawValue)")
         lines.append("Targets today: \(targets.calories) kcal, protein \(targets.protein) g, carbs \(targets.carbs) g, fat \(targets.fat) g")
         var eatenLine = "Eaten today: \(eaten.calories) kcal, protein \(eaten.protein) g, carbs \(eaten.carbs) g, fat \(eaten.fat) g (\(eaten.entryCount) entries"
         if let share = eaten.estimatedPercent { eatenLine += ", \(share)% of calories estimated" }

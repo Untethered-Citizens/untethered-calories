@@ -10,6 +10,21 @@ enum Meal: String, CaseIterable, Codable, Comparable, Sendable {
     var sortOrder: Int { Self.allCases.firstIndex(of: self)! }
 
     static func < (lhs: Meal, rhs: Meal) -> Bool { lhs.sortOrder < rhs.sortOrder }
+
+    /// The meal to assume when the user doesn't name one, from the local clock (D43).
+    /// Breakfast 04:00–10:29, lunch 10:30–14:59, dinner 17:00–20:59, snack otherwise.
+    static func `default`(at date: Date, in timeZone: TimeZone) -> Meal {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let c = calendar.dateComponents([.hour, .minute], from: date)
+        let minutes = c.hour! * 60 + c.minute!
+        switch minutes {
+        case 240..<630: return .breakfast
+        case 630..<900: return .lunch
+        case 1020..<1260: return .dinner
+        default: return .snack
+        }
+    }
 }
 
 /// Where an entry's numbers came from. An estimate is never promoted to a label.

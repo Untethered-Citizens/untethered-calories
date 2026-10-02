@@ -142,17 +142,24 @@ struct EstimateEditView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var drafts: [EntryDraft] = []
+    /// Several items sharing one meal get a single picker that sets them all.
+    @State private var oneMeal = false
     @State private var error: String?
 
     var body: some View {
         NavigationStack {
             Form {
+                if oneMeal {
+                    Section {
+                        mealPicker(sharedMealBinding)
+                    } footer: {
+                        Text("For all \(drafts.count) items.")
+                    }
+                }
                 ForEach(drafts.indices, id: \.self) { index in
                     Section {
                         TextField("What it was", text: $drafts[index].description, axis: .vertical)
-                        Picker("Meal", selection: $drafts[index].meal) {
-                            ForEach(Meal.allCases, id: \.self) { Text($0.rawValue) }
-                        }
+                        if !oneMeal { mealPicker($drafts[index].meal) }
                         DatePicker("Day", selection: dateBinding(index),
                                    in: ...LocalDate.today(in: timeZone).date(in: timeZone),
                                    displayedComponents: .date)
@@ -179,7 +186,11 @@ struct EstimateEditView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) { Button("Log", action: save).bold() }
             }
-            .onAppear { if drafts.isEmpty { drafts = original } }
+            .onAppear {
+                guard drafts.isEmpty else { return }
+                drafts = original
+                oneMeal = drafts.count > 1 && Set(drafts.map(\.meal)).count == 1
+            }
         }
     }
 
@@ -191,6 +202,17 @@ struct EstimateEditView: View {
                     .foregroundStyle(.orange)
             }
         }
+    }
+
+    private func mealPicker(_ selection: Binding<Meal>) -> some View {
+        Picker("Meal", selection: selection) {
+            ForEach(Meal.allCases, id: \.self) { Text($0.rawValue) }
+        }
+    }
+
+    private var sharedMealBinding: Binding<Meal> {
+        Binding(get: { drafts.first?.meal ?? .snack },
+                set: { meal in drafts.indices.forEach { drafts[$0].meal = meal } })
     }
 
     private func dateBinding(_ index: Int) -> Binding<Date> {
