@@ -67,8 +67,9 @@ enum SampleData {
         }
         try EntryWriter.commit(pending, confirmedByUser: true, in: context)
 
-        // About 1 lb a week down, with day-to-day water noise and a few missed days.
-        for back in stride(from: 27, through: 0, by: -1) where random.next(4) != 0 && !(8...10).contains(back) {
+        // About 1 lb a week down, with day-to-day water noise, one skipped day in six and a
+        // two-day gap (still four readings in every week, so the average runs throughout).
+        for back in stride(from: 27, through: 0, by: -1) where back % 6 != 2 && !(12...13).contains(back) {
             let trend = 174.0 - Double(27 - back) * 0.15
             let noise = Double(random.next(13) - 6) / 10
             let row = try DailySummaryStore.getOrCreate(today.adding(days: -back), in: context)
