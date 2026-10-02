@@ -1,0 +1,31 @@
+import Foundation
+
+/// One body-mass sample as Apple Health reports it, already converted to pounds.
+struct WeightSample: Equatable, Sendable {
+    /// When the weigh-in happened.
+    var taken: Date
+    var pounds: Double
+}
+
+/// Turns Health samples into one reading per calendar day (D20, D49).
+enum WeightImport {
+    /// How far back the sync looks, and so how much history the first connection brings in.
+    static let windowDays = 90
+
+    /// The latest weigh-in on each local calendar day, to one decimal. A reading belongs to
+    /// the day it was taken, not to today.
+    static func dailyLatest(_ samples: [WeightSample], in timeZone: TimeZone) -> [LocalDate: Double] {
+        var latest: [LocalDate: WeightSample] = [:]
+        for sample in samples {
+            let day = LocalDate(sample.taken, in: timeZone)
+            if let kept = latest[day], kept.taken >= sample.taken { continue }
+            latest[day] = sample
+        }
+        return latest.mapValues { ($0.pounds * 10).rounded() / 10 }
+    }
+
+    /// The first day the sync covers, counting today as day one.
+    static func windowStart(today: LocalDate) -> LocalDate {
+        today.adding(days: -(windowDays - 1))
+    }
+}

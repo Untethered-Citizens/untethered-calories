@@ -9,7 +9,9 @@ struct ContentView: View {
 
     @AppStorage("selectedTab") private var selected = TabID.log
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var context
     @State private var clock = DayClock()
+    @State private var health = HealthWeight()
 
     var body: some View {
         TabView(selection: $selected) {
@@ -21,10 +23,21 @@ struct ContentView: View {
         }
         .tint(Palette.green)
         .environment(clock)
-        .onChange(of: scenePhase) { _, phase in if phase == .active { clock.refresh() } }
+        .environment(health)
+        .task { await syncWeight() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            clock.refresh()
+            Task { await syncWeight() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             clock.refresh()
         }
+    }
+
+    /// Weight comes in on launch and every return to the foreground.
+    private func syncWeight() async {
+        await health.sync(into: context, today: clock.today, timeZone: AppSettings().timeZone)
     }
 }
 

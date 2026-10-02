@@ -5,6 +5,8 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(HealthWeight.self) private var health
+    @Environment(DayClock.self) private var clock
 
     private let settings = AppSettings()
     private let keyStore = APIKeyStore()
@@ -28,6 +30,7 @@ struct SettingsView: View {
                 keySection
                 modelSection
                 targetsSection
+                healthSection
                 dataSection
                 unitsSection
                 #if DEBUG && targetEnvironment(simulator)
@@ -156,6 +159,24 @@ struct SettingsView: View {
     }
     #endif
 
+    private var healthSection: some View {
+        Section {
+            if !health.isAvailable {
+                Text("Apple Health isn't available on this device.")
+            } else if health.needsRequest {
+                Button("Connect Apple Health") {
+                    Task { await health.connect(into: context, today: clock.today, timeZone: settings.timeZone) }
+                }
+            } else {
+                LabeledContent("Weight", value: "Syncs when the app opens")
+            }
+        } header: {
+            Text("Apple Health")
+        } footer: {
+            Text("The app reads your weight (the last reading of each day, for the last 90 days) and never writes to Health. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: Settings → Privacy & Security → Health → Calorie Tracker.")
+        }
+    }
+
     private var unitsSection: some View {
         Section {
             Picker("Weight", selection: $weightUnit) {
@@ -216,5 +237,7 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .environment(HealthWeight())
+        .environment(DayClock())
         .modelContainer(try! DataStore.makeContainer(inMemory: true))
 }

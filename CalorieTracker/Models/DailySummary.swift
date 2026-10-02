@@ -18,6 +18,8 @@ final class DailySummary {
     var entryCount: Int
     /// Pounds, one decimal. Nil until a reading exists for this day.
     var weight: Double?
+    /// True when `weight` came from Apple Health, so the sync may correct or clear it.
+    var weightFromHealth: Bool = false
     /// The day's meals, one line each, written at roll-up.
     var mealsDetail: String
     /// Whether this day's meal detail has been folded in.
@@ -32,6 +34,7 @@ final class DailySummary {
         estimatedCalories = 0
         entryCount = 0
         weight = nil
+        weightFromHealth = false
         mealsDetail = ""
         rolledUp = false
     }

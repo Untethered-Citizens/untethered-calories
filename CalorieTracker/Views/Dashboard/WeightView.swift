@@ -3,9 +3,11 @@ import SwiftData
 import Charts
 
 /// Tab 4: weight readings, with the 7-day average drawn only where a week holds enough
-/// readings to mean something. Readings arrive from Apple Health (Phase 5).
+/// readings to mean something. Readings arrive from Apple Health.
 struct WeightView: View {
     @Environment(DayClock.self) private var clock
+    @Environment(HealthWeight.self) private var health
+    @Environment(\.modelContext) private var context
 
     @Query(filter: #Predicate<DailySummary> { $0.weight != nil }, sort: \DailySummary.dayKey)
     private var weighed: [DailySummary]
@@ -102,8 +104,24 @@ struct WeightView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("No weight logged yet")
                 .font(.system(size: 24, weight: .semibold).width(.condensed))
-            Text("Weight will come from Apple Health: weigh in with a smart scale or log it in the Health app, and it appears here. Connecting to Health arrives in the next update.")
-                .foregroundStyle(Palette.muted)
+            if !health.isAvailable {
+                Text("Weight comes from Apple Health, which isn't available on this device.")
+                    .foregroundStyle(Palette.muted)
+            } else if health.needsRequest {
+                Text("Weight comes from Apple Health. Weigh in with a smart scale or log it in the Health app, and it appears here. The app only reads your weight; it never changes anything in Health.\n\nWhen iOS asks how much data to share, choose All Recorded Data to bring in your last 90 days.")
+                    .foregroundStyle(Palette.muted)
+                Button("Connect Apple Health") {
+                    Task {
+                        await health.connect(into: context, today: clock.today, timeZone: AppSettings().timeZone)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Palette.green)
+                .padding(.top, 4)
+            } else {
+                Text(HealthWeight.noReadingsHelp)
+                    .foregroundStyle(Palette.muted)
+            }
         }
         .foregroundStyle(Palette.ink)
         .padding(20)
