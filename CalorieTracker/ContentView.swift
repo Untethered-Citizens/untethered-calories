@@ -1,3 +1,4 @@
+import OSLog
 import SwiftUI
 import SwiftData
 
@@ -24,20 +25,34 @@ struct ContentView: View {
         .tint(Palette.green)
         .environment(clock)
         .environment(health)
-        .task { await syncWeight() }
+        .task { await refresh() }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
-            clock.refresh()
-            Task { await syncWeight() }
+            Task { await refresh() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            clock.refresh()
+            Task { await refresh() }
         }
     }
 
-    /// Weight comes in on launch and every return to the foreground.
-    private func syncWeight() async {
-        await health.sync(into: context, today: clock.today, timeZone: AppSettings().timeZone)
+    private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "maintenance")
+
+    /// On launch, every return to the foreground and at midnight: fold meal detail older than
+    /// the window into daily summaries (D51), then bring in weight from Health.
+    private func refresh() async {
+        clock.refresh()
+        let settings = AppSettings()
+        do {
+            let result = try RollUp.run(in: context, today: clock.today, detailWindowDays: settings.detailWindowDays)
+            if !result.daysRolled.isEmpty {
+                try context.save()
+                Self.log.debug("Rolled up \(result.daysRolled.count) days, \(result.entriesDeleted) entries")
+            }
+        } catch {
+            // Nothing is deleted unless the whole roll-up succeeds; the next open retries.
+            Self.log.error("Roll-up failed: \(error.localizedDescription, privacy: .public)")
+        }
+        await health.sync(into: context, today: clock.today, timeZone: settings.timeZone)
     }
 }
 

@@ -135,7 +135,7 @@ struct SettingsView: View {
         } header: {
             Text("Keep on this iPhone")
         } footer: {
-            Text("After the meal-detail window, each day's meals are folded into one daily total. Daily totals are kept for the period you choose.")
+            Text("Meals older than the meal-detail window are folded into one total per day the next time the app opens. You can still see what you ate, but folded meals can no longer be edited one by one. Daily totals are kept for the period you choose.")
         }
     }
 
