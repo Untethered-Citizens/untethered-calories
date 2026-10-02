@@ -258,6 +258,10 @@ final class LogConversation {
             outgoing = nil
             lastActivity = now()
             lastUsage = response.usage
+            if let usage = response.usage {
+                // Counts only, for the cost estimate in Settings (D55). Never the text.
+                try? UsageLedger.record(usage, model: modelID, newMessage: rounds == 1, on: today, in: context)
+            }
             handle(response)
         }
     }

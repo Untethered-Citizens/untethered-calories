@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 enum DataStore {
-    static let schema = Schema([MealEntry.self, DailySummary.self, Targets.self, UsualMeal.self])
+    static let schema = Schema([MealEntry.self, DailySummary.self, Targets.self, UsualMeal.self, TokenUsage.self])
 
     /// The app's container. `inMemory` is for tests and previews.
     static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {

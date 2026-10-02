@@ -100,6 +100,7 @@ struct SettingsView: View {
             } else {
                 LabeledContent("Model", value: modelID ?? "Not chosen yet")
             }
+            NavigationLink("Usage and cost") { UsageView() }
         } header: {
             Text("Model")
         } footer: {

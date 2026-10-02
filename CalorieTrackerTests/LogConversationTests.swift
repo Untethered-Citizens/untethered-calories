@@ -539,3 +539,21 @@ struct ChatKeepingTests {
         #expect(eightDaysLater.items.isEmpty)
     }
 }
+
+extension ChatKeepingTests {
+    @Test func eachReplyIsCountedForTheCostEstimate() async throws {
+        let input = entries(entry(meal: "Lunch", description: "BLT", calories: 765, protein: 30,
+                                  carbs: 60, fat: 45, source: "Estimate", basis: "description"))
+        let conversation = launch(StubTransport([
+            .http(200, reply([toolUse("toolu_1", "get_day", #"{"date":"2026-09-29"}"#)], stop: "tool_use")),
+            .http(200, reply([toolUse("toolu_2", "propose_estimate", input)], stop: "tool_use")),
+        ]))
+        await conversation.send("BLT for lunch")
+        let rows = try container.mainContext.fetch(FetchDescriptor<TokenUsage>())
+        #expect(rows.count == 1)
+        #expect(rows.first?.modelID == modelID)
+        #expect(rows.first?.requests == 2)   // two rounds for one message
+        #expect(rows.first?.messages == 1)
+        #expect(rows.first?.outputTokens == 10)
+    }
+}
