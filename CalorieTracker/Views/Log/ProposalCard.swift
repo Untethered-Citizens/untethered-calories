@@ -134,8 +134,11 @@ struct EntryLine: View {
     }
 }
 
-/// Edit an estimate before logging it. The source can't change: an estimate stays an estimate.
-struct EstimateEditView: View {
+/// Edit entries: an estimate before it's logged, or a saved entry (D44).
+/// The source can't change: an estimate stays an estimate.
+struct EntryEditView: View {
+    var title = "Edit estimate"
+    var saveTitle = "Log"
     var original: [EntryDraft]
     var timeZone: TimeZone
     var onSave: ([EntryDraft]) throws -> Void
@@ -179,12 +182,12 @@ struct EstimateEditView: View {
                     Text(error).foregroundStyle(.red).font(.footnote)
                 }
             }
-            .navigationTitle("Edit estimate")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .keyboardDoneButton()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("Log", action: save).bold() }
+                ToolbarItem(placement: .confirmationAction) { Button(saveTitle, action: save).bold() }
             }
             .onAppear {
                 guard drafts.isEmpty else { return }
@@ -196,7 +199,11 @@ struct EstimateEditView: View {
 
     private func footer(for draft: EntryDraft) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Saved as \(draft.source.rawValue.lowercased()). Edited numbers are still an estimate.")
+            if draft.source == .label {
+                Text("From a label.")
+            } else {
+                Text("Saved as \(draft.source.rawValue.lowercased()). Edited numbers are still an estimate.")
+            }
             if Integrity.macroIssue(draft) != nil {
                 Text("Protein, carbs and fat add up to \(Integrity.macroCalories(protein: draft.protein, carbs: draft.carbs, fat: draft.fat).formatted()) cal, more than 15% away from the calories. Check the numbers, or turn on alcohol.")
                     .foregroundStyle(.orange)
@@ -225,7 +232,7 @@ struct EstimateEditView: View {
             try onSave(drafts)
             dismiss()
         } catch is WriteRejected {
-            error = "Some numbers don't add up. Fix the items marked above, then tap Log."
+            error = "Some numbers don't add up. Fix the items marked above, then tap \(saveTitle)."
         } catch {
             self.error = error.localizedDescription
         }

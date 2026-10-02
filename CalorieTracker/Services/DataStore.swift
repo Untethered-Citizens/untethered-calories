@@ -64,6 +64,27 @@ enum EntryWriter {
         }
         return written
     }
+
+    /// Saves the user's correction to an entry, after the same checks as a new one.
+    /// Throws `WriteRejected` and changes nothing if the corrected entry fails them.
+    static func update(_ entry: MealEntry, to draft: EntryDraft, in context: ModelContext) throws {
+        let found = Integrity.issues(for: draft, origin: .correction(of: entry.source), confirmedByUser: true)
+        guard found.isEmpty else { throw WriteRejected(issues: [0: found]) }
+        entry.dayKey = draft.date.iso
+        entry.mealRaw = draft.meal.rawValue
+        entry.foodDescription = draft.description
+        entry.calories = draft.calories
+        entry.protein = draft.protein
+        entry.carbs = draft.carbs
+        entry.fat = draft.fat
+        entry.containsAlcohol = draft.containsAlcohol
+        try context.save()
+    }
+
+    static func delete(_ entry: MealEntry, in context: ModelContext) throws {
+        context.delete(entry)
+        try context.save()
+    }
 }
 
 /// Current and historical targets from the store.

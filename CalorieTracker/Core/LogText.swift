@@ -55,14 +55,15 @@ struct LogText {
                 .joined(separator: ", ") + "."
     }
 
-    func dayName(_ day: LocalDate) -> String {
+    /// "Fri Oct 2" by default. `template` is a date-format template, e.g. "EEEE MMM d".
+    func dayName(_ day: LocalDate, template: String = "EEE MMM d") -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC")!
         let date = calendar.date(from: DateComponents(year: day.year, month: day.month, day: day.day, hour: 12))!
         let formatter = DateFormatter()
         formatter.locale = locale
         formatter.timeZone = calendar.timeZone
-        formatter.setLocalizedDateFormatFromTemplate("EEE MMM d")
+        formatter.setLocalizedDateFormatFromTemplate(template)
         return formatter.string(from: date)
     }
 }

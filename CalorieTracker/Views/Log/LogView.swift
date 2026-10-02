@@ -35,7 +35,7 @@ struct LogView: View {
                     composer(conversation)
                 }
             }
-            .navigationTitle("Today")
+            .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -59,6 +59,7 @@ struct LogView: View {
         .onChange(of: pickerItems) { _, items in loadPicked(items) }
         .onChange(of: conversation?.revision) { _, _ in refresh() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { refresh() } }
+        .onAppear(perform: refresh) // entries may have been edited on another tab
         .task {
             if conversation == nil { conversation = LogConversation(context: context) }
             refresh()
@@ -280,7 +281,7 @@ struct LogView: View {
     @ViewBuilder
     private func editSheet(_ id: UUID) -> some View {
         if let conversation, let proposal = conversation.proposals[id], case .estimate(let entries) = proposal.kind {
-            EstimateEditView(original: entries.map(\.draft), timeZone: AppSettings().timeZone) { drafts in
+            EntryEditView(original: entries.map(\.draft), timeZone: AppSettings().timeZone) { drafts in
                 try conversation.acceptEdited(id, drafts: drafts)
             }
         }

@@ -15,11 +15,14 @@ enum EntryOrigin: Equatable, Sendable {
     case description
     /// A photo of the food itself, estimated by the model.
     case foodPhoto
+    /// The user correcting an entry that's already saved (D44). The source can't change:
+    /// fixing an estimate's numbers doesn't make it a label.
+    case correction(of: Source)
 
     /// Path A commits immediately. Path B is proposed, confirmed, then committed.
     var path: LogPath {
         switch self {
-        case .statedNumbers, .labelPhoto, .usualMeal: return .a
+        case .statedNumbers, .labelPhoto, .usualMeal, .correction: return .a
         case .usualMealVariation, .description, .foodPhoto: return .b
         }
     }
@@ -31,6 +34,7 @@ enum EntryOrigin: Equatable, Sendable {
         case .usualMeal(let stored): return stored
         case .usualMealVariation, .description: return .estimate
         case .foodPhoto: return .photoEstimate
+        case .correction(let original): return original
         }
     }
 }

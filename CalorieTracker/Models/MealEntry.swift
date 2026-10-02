@@ -40,6 +40,12 @@ final class MealEntry {
     var meal: Meal { Meal(rawValue: mealRaw) ?? .snack }
     var source: Source { Source(rawValue: sourceRaw) ?? .estimate }
 
+    /// The entry as an editable draft.
+    var draft: EntryDraft {
+        EntryDraft(date: date, meal: meal, description: foodDescription, calories: calories,
+                   protein: protein, carbs: carbs, fat: fat, source: source, containsAlcohol: containsAlcohol)
+    }
+
     /// Detail order: date, then meal slot, then creation as a tiebreak within a slot.
     static func detailOrder(_ a: MealEntry, _ b: MealEntry) -> Bool {
         if a.dayKey != b.dayKey { return a.dayKey < b.dayKey }

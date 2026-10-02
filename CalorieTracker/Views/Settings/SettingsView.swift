@@ -30,6 +30,9 @@ struct SettingsView: View {
                 targetsSection
                 dataSection
                 unitsSection
+                #if DEBUG && targetEnvironment(simulator)
+                sampleSection
+                #endif
             }
             .navigationTitle("Settings")
             .toolbar {
@@ -132,6 +135,26 @@ struct SettingsView: View {
             Text("After the meal-detail window, each day's meals are folded into one daily total. Daily totals are kept for the period you choose.")
         }
     }
+
+    #if DEBUG && targetEnvironment(simulator)
+    @State private var confirmingSample = false
+
+    private var sampleSection: some View {
+        Section {
+            Button("Load sample data", role: .destructive) { confirmingSample = true }
+                .confirmationDialog("Replace all meals and weights with four weeks of sample data?",
+                                    isPresented: $confirmingSample, titleVisibility: .visible) {
+                    Button("Replace with sample", role: .destructive) {
+                        let settings = AppSettings()
+                        try? SampleData.load(into: context, today: LocalDate.today(in: settings.timeZone),
+                                             detailWindowDays: settings.detailWindowDays)
+                    }
+                }
+        } header: {
+            Text("Simulator only")
+        }
+    }
+    #endif
 
     private var unitsSection: some View {
         Section {
