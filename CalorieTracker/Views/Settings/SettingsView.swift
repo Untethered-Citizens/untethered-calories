@@ -153,7 +153,7 @@ struct SettingsView: View {
         } header: {
             Text("Keep on this iPhone")
         } footer: {
-            Text("Meals older than the meal-detail window are folded into one total per day the next time the app opens. You can still see what you ate, but folded meals can no longer be edited one by one. Daily totals are kept for the period you choose. If you set a limit, the app asks before deleting anything, and offers an export first.")
+            Text("Meals older than the meal-detail window are folded into one total per day the next time the app opens. You can still see what you ate, but folded meals can no longer be edited one by one. Daily totals are kept for the period you choose. If you set a limit, the app asks before deleting anything, and offers an export first. The Log chat stays on screen for the Conversations period; photos are never kept.")
         }
     }
 

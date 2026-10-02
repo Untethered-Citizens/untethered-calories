@@ -461,3 +461,81 @@ struct LogConversationTests {
         #expect(assistant[0]["thinking"] as? String == "")
     }
 }
+
+/// The chat kept between launches (D53).
+@MainActor
+struct ChatKeepingTests {
+    let container: ModelContainer
+    let settings: AppSettings
+    let store: ChatStore
+    let modelID = "claude-test-model"
+    /// 2026-09-29 12:30 in Los Angeles.
+    let clock = Date(timeIntervalSince1970: 1_790_710_200)
+
+    init() throws {
+        container = try DataStore.makeContainer(inMemory: true)
+        settings = AppSettings(defaults: UserDefaults(suiteName: "ChatKeepingTests-\(UUID())")!)
+        settings.modelID = modelID
+        settings.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        store = ChatStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("chat-\(UUID()).json"))
+    }
+
+    func launch(_ stub: StubTransport, at time: Date? = nil) -> LogConversation {
+        let now = time ?? clock
+        let conversation = LogConversation(context: container.mainContext, settings: settings, apiKey: { "sk-ant-test-key" },
+                                           transport: stub, now: { now }, store: store)
+        conversation.capabilities[modelID] = ModelCapabilities(imageInput: true, lowEffort: true, strictTools: true)
+        return conversation
+    }
+
+    @Test func pendingCardStillWorksAfterRelaunch() async throws {
+        let input = entries(entry(meal: "Lunch", description: "BLT", calories: 765, protein: 30,
+                                  carbs: 60, fat: 45, source: "Estimate", basis: "description"))
+        let first = launch(StubTransport([.http(200, reply([toolUse("toolu_1", "propose_estimate", input)], stop: "tool_use"))]))
+        await first.send("BLT for lunch")
+        guard case .proposal(let id) = first.items.last?.kind else { Issue.record("Expected a card"); return }
+
+        let second = launch(StubTransport([]))
+        #expect(second.proposals[id]?.status == .pending)
+        second.accept(id)
+        let saved = try container.mainContext.fetch(FetchDescriptor<MealEntry>())
+        #expect(saved.map(\.foodDescription) == ["BLT"])
+        #expect(saved.first?.source == .estimate)
+    }
+
+    @Test func relaunchStartsAFreshConversationBelowADivider() async throws {
+        let first = launch(StubTransport([.http(200, reply([text("Hi.")], stop: "end_turn"))]))
+        await first.send("hello")
+
+        let stub = StubTransport([.http(200, reply([text("Sure.")], stop: "end_turn"))])
+        let second = launch(stub)
+        guard case .newConversation = second.items.last?.kind else { Issue.record("Expected a divider"); return }
+        await second.send("and again")
+        // Only the new message goes to Anthropic, never the restored chat.
+        #expect(try messages(stub.requests[0]).count == 1)
+    }
+
+    @Test func photosAreNeverKept() async throws {
+        let first = launch(StubTransport([.http(200, reply([text("Looks like soup.")], stop: "end_turn"))]))
+        await first.send("what's this", photos: [Data([0xFF, 0xD8, 0xFF, 0x00])])
+
+        let raw = try String(contentsOf: try #require(store.url), encoding: .utf8)
+        #expect(!raw.contains("/9j/")) // no base64 JPEG in the file
+        let second = launch(StubTransport([]))
+        guard case .user(let text, let photos, let notKept) = second.items.first?.kind else {
+            Issue.record("Expected the user's message"); return
+        }
+        #expect(text == "what's this")
+        #expect(photos.isEmpty)
+        #expect(notKept == 1)
+    }
+
+    @Test func chatPastTheRetentionWindowIsGone() async throws {
+        settings.transcriptRetentionDays = 7
+        let first = launch(StubTransport([.http(200, reply([text("Hi.")], stop: "end_turn"))]))
+        await first.send("hello")
+
+        let eightDaysLater = launch(StubTransport([]), at: clock.addingTimeInterval(8 * 86_400))
+        #expect(eightDaysLater.items.isEmpty)
+    }
+}

@@ -15,7 +15,8 @@ import SwiftData
 final class LogConversation {
     struct Item: Identifiable {
         enum Kind {
-            case user(String, photos: [Data])
+            /// `photosNotKept` counts photos from before a relaunch: they're never saved (D53).
+            case user(String, photos: [Data], photosNotKept: Int = 0)
             case assistant(String)
             /// A Path A write, confirmed in one line.
             case logged(String)
@@ -27,12 +28,13 @@ final class LogConversation {
             case newConversation
         }
 
-        let id = UUID()
+        var id = UUID()
         let kind: Kind
+        var at = Date()
     }
 
-    struct Proposal: Identifiable {
-        enum Status: Equatable {
+    struct Proposal: Identifiable, Codable {
+        enum Status: Equatable, Codable {
             case pending
             /// Done, with the line shown on the card.
             case done(String)
@@ -52,8 +54,8 @@ final class LogConversation {
         var needsKey: Bool = false
     }
 
-    private(set) var items: [Item] = []
-    private(set) var proposals: [UUID: Proposal] = [:]
+    private(set) var items: [Item] = [] { didSet { persist() } }
+    private(set) var proposals: [UUID: Proposal] = [:] { didSet { persist() } }
     private(set) var isSending = false
     private(set) var failure: Failure?
     /// Goes up whenever stored data changes, so screens showing totals can refresh.
@@ -82,6 +84,9 @@ final class LogConversation {
     private let apiKey: () -> String?
     private let transport: HTTPTransport
     private let now: () -> Date
+    /// Where the visible chat is kept between launches. Nil keeps it in memory (tests).
+    private let store: ChatStore?
+    private var restoring = false
 
     private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "api")
 
@@ -97,12 +102,37 @@ final class LogConversation {
     init(context: ModelContext, settings: AppSettings = AppSettings(),
          apiKey: @escaping () -> String? = { try? APIKeyStore().load() },
          transport: HTTPTransport = URLSessionTransport(),
-         now: @escaping () -> Date = Date.init) {
+         now: @escaping () -> Date = Date.init,
+         store: ChatStore? = nil) {
         self.context = context
         self.settings = settings
         self.apiKey = apiKey
         self.transport = transport
         self.now = now
+        self.store = store
+        restore()
+    }
+
+    // MARK: Keeping the chat (D53)
+
+    /// Brings back the chat from earlier launches, minus anything past the retention window.
+    /// Only the screen comes back: what's sent to Anthropic starts fresh, below a divider.
+    private func restore() {
+        guard let store, let saved = store.load() else { return }
+        let kept = saved.pruned(keepingDays: settings.transcriptRetentionDays, today: today, timeZone: settings.timeZone)
+        restoring = true
+        items = kept.items.map(\.item)
+        proposals = kept.proposals
+        restoring = false
+        if !items.isEmpty { items.append(Item(kind: .newConversation, at: now())) }
+    }
+
+    /// A new chat item, stamped with the app's clock.
+    private func entry(_ kind: Item.Kind) -> Item { Item(kind: kind, at: now()) }
+
+    private func persist() {
+        guard let store, !restoring else { return }
+        store.save(ChatTranscript(items: items.map(ChatTranscript.StoredItem.init), proposals: proposals))
     }
 
     var today: LocalDate { LocalDate.today(in: settings.timeZone, now: now()) }
@@ -122,8 +152,8 @@ final class LogConversation {
         guard !text.isEmpty || !photos.isEmpty, !isSending else { return false }
 
         if photos.isEmpty && LocalQuery.isRemainingQuestion(text) {
-            items.append(Item(kind: .user(text, photos: [])))
-            items.append(Item(kind: .local(localRemainingAnswer())))
+            items.append(entry(.user(text, photos: [])))
+            items.append(entry(.local(localRemainingAnswer())))
             return true
         }
         guard apiKey() != nil else {
@@ -146,7 +176,7 @@ final class LogConversation {
         outgoing = (outgoing ?? []) + content
         if !photos.isEmpty { hasPhoto = true }
         conversationDay = today
-        items.append(Item(kind: .user(text, photos: photos)))
+        items.append(entry(.user(text, photos: photos)))
         await run()
         return true
     }
@@ -166,7 +196,7 @@ final class LogConversation {
         lastActivity = nil
         failure = nil
         if let last = items.last, case .newConversation = last.kind { return }
-        if !items.isEmpty { items.append(Item(kind: .newConversation)) }
+        if !items.isEmpty { items.append(entry(.newConversation)) }
     }
 
     func clearFailure() { failure = nil }
@@ -203,7 +233,7 @@ final class LogConversation {
                 // Leave the conversation valid: answer the open tool calls, then stop.
                 deferredResults = content.filter { $0["type"]?.stringValue == "tool_result" }
                 outgoing = nil
-                items.append(Item(kind: .notice("That took too many steps. Try saying it another way.")))
+                items.append(entry(.notice("That took too many steps. Try saying it another way.")))
                 return
             }
             let request = MessagesRequest(model: modelID, maxTokens: Self.maxTokens, system: SystemPrompt.text,
@@ -236,7 +266,7 @@ final class LogConversation {
         let calls = response.toolCalls
         // A direct log gets the app's own one-line confirmation, so any words alongside it are noise.
         let logsDirectly = calls.contains { $0.name == LogTool.logEntries.rawValue }
-        if !response.text.isEmpty && !logsDirectly { items.append(Item(kind: .assistant(response.text))) }
+        if !response.text.isEmpty && !logsDirectly { items.append(entry(.assistant(response.text))) }
 
         guard response.stopReason == "tool_use" else {
             // Every tool call needs an answer in the next message, even a cut-off one.
@@ -245,9 +275,9 @@ final class LogConversation {
             }
             switch response.stopReason {
             case "max_tokens":
-                items.append(Item(kind: .notice("The reply was cut off. Try asking for less at once.")))
+                items.append(entry(.notice("The reply was cut off. Try asking for less at once.")))
             case "refusal":
-                items.append(Item(kind: .notice("Claude declined to answer that. Try rewording it.")))
+                items.append(entry(.notice("Claude declined to answer that. Try rewording it.")))
             default:
                 break
             }
@@ -264,12 +294,12 @@ final class LogConversation {
             switch outcome.effect {
             case .none: break
             case .logged(let line):
-                items.append(Item(kind: .logged(line)))
+                items.append(entry(.logged(line)))
                 revision += 1
             case .proposal(let kind):
                 let id = UUID()
                 proposals[id] = Proposal(id: id, kind: kind)
-                items.append(Item(kind: .proposal(id)))
+                items.append(entry(.proposal(id)))
             }
         }
         if allTerminal {

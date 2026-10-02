@@ -61,7 +61,7 @@ struct LogView: View {
         .onChange(of: scenePhase) { _, phase in if phase == .active { refresh() } }
         .onAppear(perform: refresh) // entries may have been edited on another tab
         .task {
-            if conversation == nil { conversation = LogConversation(context: context) }
+            if conversation == nil { conversation = LogConversation(context: context, store: .standard) }
             refresh()
         }
     }
@@ -102,9 +102,14 @@ struct LogView: View {
     @ViewBuilder
     private func row(_ item: LogConversation.Item, _ conversation: LogConversation) -> some View {
         switch item.kind {
-        case .user(let text, let photos):
+        case .user(let text, let photos, let notKept):
             VStack(alignment: .trailing, spacing: 6) {
                 if !photos.isEmpty { PhotoStrip(photos: photos, size: 88) }
+                if notKept > 0 {
+                    Label(notKept == 1 ? "Photo (not kept)" : "\(notKept) photos (not kept)", systemImage: "photo")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if !text.isEmpty {
                     Text(text)
                         .padding(.horizontal, 12).padding(.vertical, 8)

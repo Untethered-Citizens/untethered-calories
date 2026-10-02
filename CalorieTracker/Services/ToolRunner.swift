@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 /// Something the user must tap before anything is written.
-enum ProposalKind: Sendable {
+enum ProposalKind: Codable, Sendable {
     /// Path B: the model's estimate, awaiting Accept or Edit.
     case estimate([PendingEntry])
     case targets(MacroTargets, from: LocalDate, goalNote: String)

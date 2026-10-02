@@ -31,7 +31,7 @@ enum DailySummaryStore {
 }
 
 /// An entry on its way in, with how its numbers were obtained.
-struct PendingEntry: Sendable {
+struct PendingEntry: Codable, Sendable {
     var draft: EntryDraft
     var origin: EntryOrigin
 }

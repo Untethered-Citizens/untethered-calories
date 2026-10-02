@@ -2,7 +2,7 @@ import Foundation
 
 /// How the numbers for an entry reached the app. This decides the logging path
 /// and which `Source` is honest for the entry.
-enum EntryOrigin: Equatable, Sendable {
+enum EntryOrigin: Equatable, Codable, Sendable {
     /// The user stated the numbers or typed out a label.
     case statedNumbers
     /// Read from a photo of a nutrition label.
