@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import CalorieTracker
 
@@ -91,5 +92,31 @@ struct StatsTests {
         #expect(stats.averageCalories == Rounding.nearest5(Double(sum.calories) / 5))
         #expect(stats.estimatedPercent == sum.estimatedPercent)
         #expect((50...85).contains(stats.estimatedPercent ?? 0)) // estimates dominate, as in the pilot
+    }
+
+    @Test func earlierWeekCountsAllSevenDays() {
+        let end = today.adding(days: -7)
+        let days: [LocalDate: NutritionTotals] = [
+            end: NutritionTotals(calories: 1700, entryCount: 3),
+            end.adding(days: -6): NutritionTotals(calories: 1900, entryCount: 3),
+            today: NutritionTotals(calories: 900, entryCount: 1), // outside this window
+        ]
+        let stats = WeekStats(today: today, ending: end, dayTotals: days, targetPeriods: [])
+        #expect(stats.days.first == end.adding(days: -6) && stats.days.last == end)
+        #expect(!stats.includesToday)
+        #expect(stats.completeDays.count == 2)
+        #expect(stats.missingDays.count == 5)
+        #expect(stats.averageCalories == 1800)
+    }
+
+    @Test func honestyNoteSaysWhatIsLeftOut() {
+        let days: [LocalDate: NutritionTotals] = [
+            today.adding(days: -1): NutritionTotals(calories: 1800, entryCount: 3),
+            today.adding(days: -3): NutritionTotals(calories: 1800, entryCount: 3),
+        ]
+        let stats = WeekStats(today: today, dayTotals: days, targetPeriods: [],
+                              firstLoggingDay: today.adding(days: -3))
+        let note = stats.honestyNote(text: LogText(locale: Locale(identifier: "en_US")))
+        #expect(note == "Averages cover 2 complete days, Sep 23 to Sep 25. Today is left out because it isn't finished. 4 days had no data and aren't averaged over. Sep 23 was the first day of logging and may be incomplete. Solid bars are from labels; hatched bars are estimates.")
     }
 }

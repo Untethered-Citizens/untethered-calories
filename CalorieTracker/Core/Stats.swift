@@ -70,8 +70,10 @@ struct Remaining: Equatable, Sendable {
 /// today is partial and left out, days with no data are gaps and not averaged over,
 /// and each day is judged against the targets that applied on that day.
 struct WeekStats: Equatable, Sendable {
-    /// The window, oldest first, ending today.
+    /// The window, oldest first, ending on `end` (today unless paging back).
     let days: [LocalDate]
+    /// True when the window contains today, which is left out of the averages.
+    let includesToday: Bool
     /// Past days in the window that have data. These are the only days averaged.
     let completeDays: [LocalDate]
     /// Past days in the window with no data.
@@ -89,12 +91,15 @@ struct WeekStats: Equatable, Sendable {
     let includesFirstLoggingDay: Bool
 
     init(today: LocalDate,
+         ending end: LocalDate? = nil,
          dayTotals: [LocalDate: NutritionTotals],
          targetPeriods: [TargetPeriod],
          firstLoggingDay: LocalDate? = nil,
          length: Int = 7) {
-        days = LocalDate.range(from: today.adding(days: -(length - 1)), through: today)
-        let past = days.filter { $0 != today }
+        let end = min(end ?? today, today)
+        days = LocalDate.range(from: end.adding(days: -(length - 1)), through: end)
+        includesToday = days.contains(today)
+        let past = days.filter { $0 < today }
         completeDays = past.filter { (dayTotals[$0]?.entryCount ?? 0) > 0 }
         missingDays = past.filter { (dayTotals[$0]?.entryCount ?? 0) == 0 }
 
@@ -118,6 +123,34 @@ struct WeekStats: Equatable, Sendable {
         estimatedPercent = sum.estimatedPercent
         let complete = completeDays
         includesFirstLoggingDay = firstLoggingDay.map { complete.contains($0) } ?? false
+        self.firstLoggingDay = includesFirstLoggingDay ? firstLoggingDay : nil
+    }
+
+    private let firstLoggingDay: LocalDate?
+
+    /// The plain-words note under the week: what the averages cover and what they leave out.
+    func honestyNote(text: LogText = LogText()) -> String {
+        let short = { (day: LocalDate) in text.dayName(day, template: "MMM d") }
+        var parts: [String] = []
+        if let first = completeDays.first, let last = completeDays.last {
+            let count = completeDays.count
+            parts.append(count == 1
+                ? "Averages cover 1 complete day, \(short(first))."
+                : "Averages cover \(count) complete days, \(short(first)) to \(short(last)).")
+        } else {
+            parts.append("No complete days with data in this week, so there are no averages.")
+        }
+        if includesToday { parts.append("Today is left out because it isn't finished.") }
+        switch missingDays.count {
+        case 0: break
+        case 1: parts.append("1 day had no data and isn't averaged over.")
+        default: parts.append("\(missingDays.count) days had no data and aren't averaged over.")
+        }
+        if let firstLoggingDay {
+            parts.append("\(short(firstLoggingDay)) was the first day of logging and may be incomplete.")
+        }
+        parts.append("Solid bars are from labels; hatched bars are estimates.")
+        return parts.joined(separator: " ")
     }
 }
 
