@@ -11,7 +11,7 @@ struct SettingsTests {
     @Test func defaults() {
         let s = fresh()
         #expect(s.detailWindowDays == 14)
-        #expect(s.summaryRetentionDays == 365)
+        #expect(s.summaryRetentionDays == nil)
         #expect(s.transcriptRetentionDays == 7)
         #expect(s.modelID == nil)
         #expect(s.timeZone == .current)

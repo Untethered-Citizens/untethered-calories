@@ -16,6 +16,7 @@ struct AppSettings {
         static let timeZoneID = "timeZoneID"
         static let weightUnit = "weightUnit"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let lastRetentionPrompt = "lastRetentionPrompt"
     }
 
     /// Set once the first-launch flow is finished, so it only shows once.
@@ -36,10 +37,16 @@ struct AppSettings {
         nonmutating set { defaults.set(max(1, newValue), forKey: Key.detailWindowDays) }
     }
 
-    /// Days of daily summaries kept. Nil means forever.
+    /// Days of daily summaries kept. Nil (the default) means forever (D52).
     var summaryRetentionDays: Int? {
-        get { defaults.object(forKey: Key.summaryRetentionDays) == nil ? 365 : positive(Key.summaryRetentionDays) }
+        get { positive(Key.summaryRetentionDays) }
         nonmutating set { defaults.set(newValue ?? 0, forKey: Key.summaryRetentionDays) }
+    }
+
+    /// When the "old daily totals" prompt was last shown, so it comes back at most monthly.
+    var lastRetentionPrompt: LocalDate? {
+        get { defaults.string(forKey: Key.lastRetentionPrompt).flatMap(LocalDate.init(iso:)) }
+        nonmutating set { defaults.set(newValue?.iso, forKey: Key.lastRetentionPrompt) }
     }
 
     var transcriptRetentionDays: Int {

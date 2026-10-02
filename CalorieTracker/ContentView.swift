@@ -13,6 +13,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @State private var clock = DayClock()
     @State private var health = HealthWeight()
+    @State private var retentionDue = 0
 
     var body: some View {
         TabView(selection: $selected) {
@@ -25,6 +26,11 @@ struct ContentView: View {
         .tint(Palette.green)
         .environment(clock)
         .environment(health)
+        .sheet(isPresented: Binding(get: { retentionDue > 0 }, set: { if !$0 { retentionDue = 0 } })) {
+            if let keep = AppSettings().summaryRetentionDays {
+                RetentionPromptView(dueCount: retentionDue, keepDays: keep, today: clock.today)
+            }
+        }
         .task { await refresh() }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
@@ -38,7 +44,8 @@ struct ContentView: View {
     private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "maintenance")
 
     /// On launch, every return to the foreground and at midnight: fold meal detail older than
-    /// the window into daily summaries (D51), then bring in weight from Health.
+    /// the window into daily summaries (D51), bring in weight from Health, then check for
+    /// daily totals past the retention setting (D52).
     private func refresh() async {
         clock.refresh()
         let settings = AppSettings()
@@ -53,6 +60,16 @@ struct ContentView: View {
             Self.log.error("Roll-up failed: \(error.localizedDescription, privacy: .public)")
         }
         await health.sync(into: context, today: clock.today, timeZone: settings.timeZone)
+        checkRetention(settings)
+    }
+
+    /// Asks before deleting daily totals past the retention setting, at most monthly (D52).
+    private func checkRetention(_ settings: AppSettings) {
+        guard retentionDue == 0,
+              let due = try? Retention.due(today: clock.today, keepDays: settings.summaryRetentionDays, in: context),
+              Retention.shouldPrompt(dueCount: due.count, lastPrompt: settings.lastRetentionPrompt, today: clock.today)
+        else { return }
+        retentionDue = due.count
     }
 }
 

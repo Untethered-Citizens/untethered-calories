@@ -21,6 +21,8 @@ struct SettingsView: View {
     @State private var summaryRetention: Int? = 365
     @State private var transcriptDays = 7
     @State private var weightUnit = WeightUnit.lb
+    @State private var export: ExportFiles?
+    @State private var exportError: String?
 
     private static let summaryChoices: [Int?] = [90, 180, 365, 730, nil]
 
@@ -45,7 +47,12 @@ struct SettingsView: View {
             }
             .onAppear(perform: load)
             .onChange(of: detailWindowDays) { _, new in settings.detailWindowDays = new }
-            .onChange(of: summaryRetention) { _, new in settings.summaryRetentionDays = new }
+            .onChange(of: summaryRetention) { _, new in
+                settings.summaryRetentionDays = new
+                // A new limit should be asked about on the next open, not a month later.
+                settings.lastRetentionPrompt = nil
+            }
+            .sheet(item: $export) { ShareSheet(items: $0.urls) }
             .onChange(of: transcriptDays) { _, new in settings.transcriptRetentionDays = new }
             .onChange(of: weightUnit) { _, new in settings.weightUnit = new }
         }
@@ -132,10 +139,21 @@ struct SettingsView: View {
             Stepper(value: $transcriptDays, in: 1...30) {
                 LabeledContent("Conversations", value: "\(transcriptDays) days")
             }
+            Button("Export data (CSV)", systemImage: "square.and.arrow.up") {
+                do {
+                    export = ExportFiles(urls: try DataExport.files(from: context, unit: settings.weightUnit,
+                                                                    today: LocalDate.today(in: settings.timeZone)))
+                } catch {
+                    exportError = error.localizedDescription
+                }
+            }
+            if let exportError {
+                Text("Couldn't create the export: \(exportError)").foregroundStyle(Palette.plum)
+            }
         } header: {
             Text("Keep on this iPhone")
         } footer: {
-            Text("Meals older than the meal-detail window are folded into one total per day the next time the app opens. You can still see what you ate, but folded meals can no longer be edited one by one. Daily totals are kept for the period you choose.")
+            Text("Meals older than the meal-detail window are folded into one total per day the next time the app opens. You can still see what you ate, but folded meals can no longer be edited one by one. Daily totals are kept for the period you choose. If you set a limit, the app asks before deleting anything, and offers an export first.")
         }
     }
 
