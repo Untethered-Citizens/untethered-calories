@@ -262,6 +262,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Calorie Tracker";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of a meal or a nutrition label to log it.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read your weight from Apple Health to show your weight trend beside what you eat.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save the weights you enter in Calorie Tracker to Apple Health, alongside readings from your scale.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -293,6 +294,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Calorie Tracker";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of a meal or a nutrition label to log it.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read your weight from Apple Health to show your weight trend beside what you eat.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save the weights you enter in Calorie Tracker to Apple Health, alongside readings from your scale.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

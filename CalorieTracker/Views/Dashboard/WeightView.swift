@@ -15,6 +15,8 @@ struct WeightView: View {
     @Query(filter: #Predicate<DailySummary> { $0.rolledUp }, sort: \DailySummary.dayKey)
     private var rolledUp: [DailySummary]
 
+    @State private var addingWeight = false
+
     private var unit: WeightUnit { AppSettings().weightUnit }
 
     var body: some View {
@@ -30,6 +32,9 @@ struct WeightView: View {
             .background(Palette.background)
             .navigationTitle("Weight")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $addingWeight) {
+                AddWeightView(latestPounds: weighed.last?.weight)
+            }
         }
     }
 
@@ -57,6 +62,12 @@ struct WeightView: View {
                                size: 88)
                 }
                 changeLine(series)
+                if health.isAvailable {
+                    Button("Add weight", systemImage: "plus") { addingWeight = true }
+                        .buttonStyle(.bordered)
+                        .tint(Palette.green)
+                        .padding(.top, 8)
+                }
                 WeightChart(series: series, unit: unit)
                     .frame(height: 240)
                     .padding(.vertical, 8)
@@ -108,7 +119,7 @@ struct WeightView: View {
                 Text("Weight comes from Apple Health, which isn't available on this device.")
                     .foregroundStyle(Palette.muted)
             } else if health.needsRequest {
-                Text("Weight comes from Apple Health. Weigh in with a smart scale or log it in the Health app, and it appears here. The app only reads your weight; it never changes anything in Health.\n\nWhen iOS asks how much data to share, choose All Recorded Data to bring in your last 90 days.")
+                Text("Your weight lives in Apple Health, so readings from a smart scale and the ones you add here end up in the same place. Connect once, then add a weight here or just weigh in.\n\nWhen iOS asks, allow Weight for both reading and writing, and choose All Recorded Data to bring in your last 90 days.")
                     .foregroundStyle(Palette.muted)
                 Button("Connect Apple Health") {
                     Task {
@@ -121,6 +132,10 @@ struct WeightView: View {
             } else {
                 Text(HealthWeight.noReadingsHelp)
                     .foregroundStyle(Palette.muted)
+                Button("Add weight") { addingWeight = true }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Palette.green)
+                    .padding(.top, 4)
             }
         }
         .foregroundStyle(Palette.ink)

@@ -29,3 +29,18 @@ enum WeightImport {
         today.adding(days: -(windowDays - 1))
     }
 }
+
+/// A weight typed into the app, on its way to Apple Health.
+enum WeightEntry {
+    /// Anything outside this is a typo, not a weight.
+    static let plausiblePounds = 50.0...700.0
+
+    /// The typed value in `unit`, if it reads as a plausible weight. Accepts "," or "." as
+    /// the decimal mark.
+    static func value(from text: String, unit: WeightUnit) -> Double? {
+        let cleaned = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
+        guard let value = Double(cleaned), value.isFinite,
+              plausiblePounds.contains(unit.toPounds(value)) else { return nil }
+        return value
+    }
+}

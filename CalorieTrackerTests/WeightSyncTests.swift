@@ -115,3 +115,24 @@ struct WeightSyncTests {
         #expect(try rows().isEmpty)
     }
 }
+
+struct WeightEntryTests {
+    @Test func readsEitherDecimalMark() {
+        #expect(WeightEntry.value(from: "172.4", unit: .lb) == 172.4)
+        #expect(WeightEntry.value(from: " 78,2 ", unit: .kg) == 78.2)
+    }
+
+    @Test func rejectsTyposAndNonsense() {
+        #expect(WeightEntry.value(from: "", unit: .lb) == nil)
+        #expect(WeightEntry.value(from: "17.24.1", unit: .lb) == nil)
+        #expect(WeightEntry.value(from: "1724", unit: .lb) == nil)
+        #expect(WeightEntry.value(from: "17", unit: .lb) == nil)
+    }
+
+    @Test func plausibilityIsCheckedInPounds() {
+        // The limit is 700 lb: 300 kg (661 lb) passes, 320 kg (705 lb) doesn't.
+        #expect(WeightEntry.value(from: "300", unit: .lb) == 300)
+        #expect(WeightEntry.value(from: "300", unit: .kg) == 300)
+        #expect(WeightEntry.value(from: "320", unit: .kg) == nil)
+    }
+}

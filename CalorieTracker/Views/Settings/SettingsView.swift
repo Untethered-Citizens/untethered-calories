@@ -173,7 +173,7 @@ struct SettingsView: View {
         } header: {
             Text("Apple Health")
         } footer: {
-            Text("The app reads your weight (the last reading of each day, for the last 90 days) and never writes to Health. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: Settings → Privacy & Security → Health → Calorie Tracker.")
+            Text("The app reads your weight (the last reading of each day, for the last 90 days). It writes only the weights you add on the Weight tab. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: Settings → Privacy & Security → Health → Calorie Tracker.")
         }
     }
 
