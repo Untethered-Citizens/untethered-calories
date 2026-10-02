@@ -14,6 +14,8 @@ final class DayClock {
 
 /// A big condensed number with a two-line unit beside it.
 struct HeroNumber: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     var value: String
     var unit: String
     var over = false
@@ -22,7 +24,7 @@ struct HeroNumber: View {
     var body: some View {
         HStack(alignment: .lastTextBaseline, spacing: 10) {
             Text(value)
-                .font(.number(size, weight: .bold))
+                .font(.number(size, weight: .bold, relativeTo: .largeTitle))
                 .foregroundStyle(over ? Palette.plum : Palette.ink)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
@@ -81,8 +83,14 @@ struct BudgetStrip: View {
 }
 
 struct SourceLegend: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
-        HStack(spacing: 16) {
+        // One line normally; a column at the largest sizes, so no word is split.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(spacing: 16))
+        layout {
             ForEach(Source.allCases, id: \.self) { source in
                 HStack(spacing: 6) {
                     RoundedRectangle(cornerRadius: 2).fill(SourceFill(source: source)).frame(width: 14, height: 10)
@@ -97,10 +105,12 @@ struct SourceLegend: View {
 }
 
 struct SectionHeading: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     var title: String
     var body: some View {
         Text(title)
-            .font(.system(size: 26, weight: .semibold).width(.condensed))
+            .font(.condensed(26))
             .foregroundStyle(Palette.ink)
             .padding(.top, 12)
             .accessibilityAddTraits(.isHeader)
@@ -109,10 +119,14 @@ struct SectionHeading: View {
 
 /// Protein, carbs and fat as bars against their targets. A bar turns plum when over.
 struct MacroBars: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     var protein: Double
     var carbs: Double
     var fat: Double
     var targets: MacroTargets
+
+    @ScaledMetric(relativeTo: .body) private var nameWidth = 64.0
 
     var body: some View {
         VStack(spacing: 6) {
@@ -126,19 +140,33 @@ struct MacroBars: View {
         let rounded = Int(value.rounded())
         let over = rounded > target
         let fraction = target > 0 ? min(value / Double(target), 1) : 0
-        return HStack(spacing: 12) {
-            Text(name).fontWeight(.medium).frame(width: 64, alignment: .leading)
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.track)
-                    Capsule().fill(over ? Palette.plum : Palette.green)
-                        .frame(width: geometry.size.width * fraction)
+        let bar = GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Palette.track)
+                Capsule().fill(over ? Palette.plum : Palette.green)
+                    .frame(width: geometry.size.width * fraction)
+            }
+        }
+        .frame(height: 10)
+        let amount = Text("\(rounded)").font(.number(20)) + Text(" / \(target) g").font(.subheadline).foregroundStyle(Palette.muted)
+        return Group {
+            if typeSize.isAccessibilitySize {
+                // Too big to share a line: name and amount above, bar below.
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(name).fontWeight(.medium)
+                        Spacer()
+                        amount
+                    }
+                    bar
+                }
+            } else {
+                HStack(spacing: 12) {
+                    Text(name).fontWeight(.medium).frame(width: nameWidth, alignment: .leading)
+                    bar
+                    amount.frame(minWidth: 92, alignment: .trailing)
                 }
             }
-            .frame(height: 10)
-            (Text("\(rounded)").font(.number(20))
-             + Text(" / \(target) g").font(.subheadline).foregroundStyle(Palette.muted))
-                .frame(minWidth: 92, alignment: .trailing)
         }
         .foregroundStyle(Palette.ink)
         .accessibilityElement(children: .ignore)
@@ -151,6 +179,8 @@ struct SourceTag: View {
     var body: some View {
         Text(source.shortName)
             .font(.caption.weight(.medium))
+            .lineLimit(1)
+            .fixedSize()
             .foregroundStyle(source.tagColor)
             .padding(.horizontal, 7).padding(.vertical, 1)
             .overlay(Capsule().strokeBorder(source.tagColor))
@@ -159,25 +189,35 @@ struct SourceTag: View {
 
 /// One entry in a meals list: meal and source, big calories, what it was, macros.
 struct MealRow: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     var draft: EntryDraft
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
+        // At the largest sizes everything gets its own line, so no word or tag is split.
+        let big = typeSize.isAccessibilitySize
+        let outer = big ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                        : AnyLayout(HStackLayout(alignment: .center, spacing: 14))
+        let heading = big ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                          : AnyLayout(HStackLayout(spacing: 8))
+        outer {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 8) {
+                heading {
                     Text(draft.meal.rawValue).fontWeight(.semibold)
-                    SourceTag(source: draft.source)
-                    if draft.containsAlcohol {
-                        Image(systemName: "wineglass").font(.caption).foregroundStyle(Palette.muted)
-                            .accessibilityLabel("Contains alcohol")
+                    HStack(spacing: 8) {
+                        SourceTag(source: draft.source)
+                        if draft.containsAlcohol {
+                            Image(systemName: "wineglass").font(.caption).foregroundStyle(Palette.muted)
+                                .accessibilityLabel("Contains alcohol")
+                        }
                     }
                 }
                 Text(draft.description).font(.subheadline).foregroundStyle(Palette.muted)
                 Text("\(draft.protein)p · \(draft.carbs)c · \(draft.fat)f")
                     .font(.footnote).monospacedDigit().foregroundStyle(Palette.muted)
             }
-            Spacer(minLength: 0)
-            Text(draft.calories.formatted()).font(.number(24))
+            if !big { Spacer(minLength: 0) }
+            Text(draft.calories.formatted()).font(.number(24, relativeTo: .title2))
         }
         .foregroundStyle(Palette.ink)
         .padding(.vertical, 4)

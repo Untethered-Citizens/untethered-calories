@@ -86,8 +86,22 @@ extension Source {
 }
 
 /// Numbers in the dashboard: condensed, with digits that line up.
+///
+/// Sizes follow the iPhone's text-size setting, scaled like `style` (a big hero number scales
+/// like a large title, so it grows less than body text). A view using these must declare
+/// `@Environment(\.dynamicTypeSize)` so it redraws when the setting changes.
 extension Font {
-    static func number(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
-        .system(size: size, weight: weight).width(.condensed).monospacedDigit()
+    /// `relativeTo: nil` keeps the size fixed, for labels inside charts (whose text size is capped).
+    static func number(_ size: CGFloat, weight: Font.Weight = .semibold, relativeTo style: UIFont.TextStyle? = .body) -> Font {
+        .system(size: style.map { scaled(size, $0) } ?? size, weight: weight).width(.condensed).monospacedDigit()
+    }
+
+    /// Condensed headings, like the dashboard section titles.
+    static func condensed(_ size: CGFloat, weight: Font.Weight = .semibold, relativeTo style: UIFont.TextStyle = .title2) -> Font {
+        .system(size: scaled(size, style), weight: weight).width(.condensed)
+    }
+
+    private static func scaled(_ size: CGFloat, _ style: UIFont.TextStyle) -> CGFloat {
+        UIFontMetrics(forTextStyle: style).scaledValue(for: size)
     }
 }

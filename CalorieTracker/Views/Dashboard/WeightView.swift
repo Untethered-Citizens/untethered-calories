@@ -5,6 +5,8 @@ import Charts
 /// Tab 4: weight readings, with the 7-day average drawn only where a week holds enough
 /// readings to mean something. Readings arrive from Apple Health.
 struct WeightView: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(DayClock.self) private var clock
     @Environment(HealthWeight.self) private var health
     @Environment(\.modelContext) private var context
@@ -70,6 +72,8 @@ struct WeightView: View {
                 }
                 WeightChart(series: series, unit: unit)
                     .frame(height: 240)
+                    // Chart labels can't fit the largest sizes; the text around the chart scales fully.
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .padding(.vertical, 8)
                 Text(note(series))
                     .font(.subheadline)
@@ -82,7 +86,7 @@ struct WeightView: View {
                 HStack {
                     Text(text.dayName(reading.day))
                     Spacer()
-                    Text(shown(reading.pounds)).font(.number(22))
+                    Text(shown(reading.pounds)).font(.number(22, relativeTo: .title2))
                 }
                 .foregroundStyle(Palette.ink)
                 .dashboardRow(separator: true)
@@ -114,7 +118,7 @@ struct WeightView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("No weight logged yet")
-                .font(.system(size: 24, weight: .semibold).width(.condensed))
+                .font(.condensed(24))
             if !health.isAvailable {
                 Text("Weight comes from Apple Health, which isn't available on this device.")
                     .foregroundStyle(Palette.muted)
@@ -149,6 +153,8 @@ struct WeightView: View {
 /// Readings as dots on a dashed line across the whole span (gaps visible), with the
 /// 7-day average as a bold green line where it qualifies.
 struct WeightChart: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     var series: WeightSeries
     var unit: WeightUnit
 
@@ -180,7 +186,7 @@ struct WeightChart: View {
                     .annotation(position: .top) {
                         if showLabels {
                             Text(unit.fromPounds(reading.pounds).formatted(.number.precision(.fractionLength(1))))
-                                .font(.number(12)).foregroundStyle(Palette.ink)
+                                .font(.number(12, relativeTo: nil)).foregroundStyle(Palette.ink)
                         }
                     }
             }

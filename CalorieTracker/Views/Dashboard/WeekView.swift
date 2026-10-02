@@ -21,6 +21,8 @@ struct WeekView: View {
 }
 
 private struct WeekContent: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     let today: LocalDate
     let end: LocalDate
     @Binding var weeksBack: Int
@@ -68,6 +70,9 @@ private struct WeekContent: View {
                           targetFor: { TargetHistory.effective(on: $0, in: periods).calories },
                           selected: shown, onSelect: { selected = $0 })
                     .frame(height: 260)
+                    // Seven day labels can't fit large text; the day details below scale fully,
+                    // and VoiceOver reads every day's value.
+                    .dynamicTypeSize(...DynamicTypeSize.large)
                 dayHeader(shown, totals[shown])
             }
             .dashboardRow()
@@ -126,10 +131,10 @@ private struct WeekContent: View {
             Divider().overlay(Palette.rule).padding(.bottom, 8)
             HStack(alignment: .firstTextBaseline) {
                 Text(LogText().dayName(day))
-                    .font(.system(size: 26, weight: .semibold).width(.condensed))
+                    .font(.condensed(26))
                 Spacer()
                 if let totals, totals.entryCount > 0 {
-                    (Text(totals.calories.formatted()).font(.number(26, weight: .bold))
+                    (Text(totals.calories.formatted()).font(.number(26, weight: .bold, relativeTo: .title2))
                      + Text(" / \(target.calories.formatted())").font(.subheadline).foregroundStyle(Palette.muted))
                 }
             }
@@ -178,7 +183,8 @@ private struct WeekContent: View {
     // MARK: Stats
 
     private func statsRow(_ stats: WeekStats) -> some View {
-        HStack(spacing: 10) {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 10))
+        return layout {
             statPanel(stats.averageCalories.map { $0.formatted() } ?? "–", "average a day")
             statPanel(stats.completeDays.isEmpty ? "–" : "\(stats.daysOverTarget) of \(stats.completeDays.count)",
                       "days over target")
@@ -190,7 +196,7 @@ private struct WeekContent: View {
 
     private func statPanel(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(value).font(.number(30, weight: .bold)).minimumScaleFactor(0.6).lineLimit(1)
+            Text(value).font(.number(30, weight: .bold, relativeTo: .title1)).minimumScaleFactor(0.6).lineLimit(1)
             Text(label).font(.footnote).foregroundStyle(Palette.muted)
         }
         .foregroundStyle(Palette.ink)
@@ -204,6 +210,8 @@ private struct WeekContent: View {
 /// Seven stacked bars: solid label calories under hatched estimated calories, a dashed
 /// target line, and a value above each bar (plum when over, except today).
 struct WeekChart: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     var days: [LocalDate]
     var totals: [LocalDate: NutritionTotals]
     var today: LocalDate
@@ -240,7 +248,7 @@ struct WeekChart: View {
                         .annotation(position: .top) {
                             let over = !partial && total.calories > targetFor(day)
                             Text(total.calories.formatted())
-                                .font(.number(14))
+                                .font(.number(14, relativeTo: nil))
                                 .foregroundStyle(over ? Palette.plum : Palette.ink)
                         }
                 }
@@ -286,6 +294,29 @@ struct WeekChart: View {
                     }
             }
         }
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Calories per day against the \(target.formatted()) target")
+        .accessibilityValue(spokenDay(selected))
+        .accessibilityHint("Swipe up or down to choose a day.")
+        .accessibilityAdjustableAction { direction in
+            // The chart picks a day by tap, which VoiceOver can't do, so swiping steps through them.
+            guard let index = days.firstIndex(of: selected) else { return }
+            switch direction {
+            case .increment: if index + 1 < days.count { onSelect(days[index + 1]) }
+            case .decrement: if index > 0 { onSelect(days[index - 1]) }
+            @unknown default: break
+            }
+        }
+    }
+
+    private func spokenDay(_ day: LocalDate) -> String {
+        let name = LogText().dayName(day)
+        guard let total = totals[day], total.entryCount > 0 else { return "\(name), nothing logged" }
+        var parts = ["\(name), \(total.calories.formatted()) calories of \(targetFor(day).formatted())"]
+        if total.estimatedCalories > 0 {
+            parts.append("\(total.estimatedCalories.formatted()) estimated")
+        }
+        if day == today { parts.append("today so far") }
+        return parts.joined(separator: ", ")
     }
 }

@@ -5,6 +5,7 @@ import PhotosUI
 /// The logging screen: a live "remaining" header, the conversation, and a composer
 /// for text and photos.
 struct LogView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
 
@@ -35,7 +36,7 @@ struct LogView: View {
                     composer(conversation)
                 }
             }
-            .navigationTitle("Log")
+            .navigationTitle("Calorie Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -87,14 +88,14 @@ struct LogView: View {
             .onChange(of: conversation.items.count) { _, _ in
                 // A card needs the screen, and Accept should be one tap, not one to close the keyboard.
                 if case .proposal = conversation.items.last?.kind { composerFocused = false }
-                withAnimation { proxy.scrollTo(conversation.items.last?.id, anchor: .bottom) }
+                withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(conversation.items.last?.id, anchor: .bottom) }
             }
             .onChange(of: conversation.revision) { _, _ in
                 // A card that was just accepted grows by a line; keep it in view.
-                withAnimation { proxy.scrollTo(conversation.items.last?.id, anchor: .bottom) }
+                withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(conversation.items.last?.id, anchor: .bottom) }
             }
             .onChange(of: conversation.isSending) { _, sending in
-                if sending { withAnimation { proxy.scrollTo("sending", anchor: .bottom) } }
+                if sending { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("sending", anchor: .bottom) } }
             }
         }
     }
@@ -215,7 +216,7 @@ struct LogView: View {
                 } label: {
                     Image(systemName: "camera.fill")
                         .font(.title3)
-                        .frame(width: 36, height: 36)
+                        .frame(minWidth: 36, minHeight: 36)
                 }
                 .disabled(!conversation.acceptsPhotos || photos.count >= PhotoPrep.maxPhotosPerMessage)
                 .accessibilityLabel("Add photo")
@@ -230,7 +231,7 @@ struct LogView: View {
                     send(conversation)
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 32))
+                        .font(.largeTitle)
                 }
                 .disabled(conversation.isSending || (draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photos.isEmpty))
                 .accessibilityLabel("Send")
@@ -310,35 +311,45 @@ struct RemainingHeader: View {
     var targets: MacroTargets
     var eaten: NutritionTotals
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     private var remaining: Remaining { Remaining(targets: targets, eaten: eaten) }
 
     var body: some View {
         VStack(spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(abs(remaining.calories).formatted())
-                    .font(.system(size: 34, weight: .semibold, design: .rounded))
+                    .font(.system(.largeTitle, design: .rounded, weight: .semibold))
                     .monospacedDigit()
                     .contentTransition(.numericText())
-                Text(remaining.isOverCalories ? "over" : "left")
+                Text(remaining.isOverCalories ? "calories over today" : "calories left today")
                     .foregroundStyle(remaining.isOverCalories ? .orange : .secondary)
-                Spacer()
-                Text("\(eaten.calories.formatted()) of \(targets.calories.formatted())")
-                    .font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
+                Spacer(minLength: 0)
             }
+            Text("\(eaten.calories.formatted()) of \(targets.calories.formatted()) calories eaten")
+                .font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             ProgressView(value: Double(min(eaten.calories, targets.calories)), total: Double(max(targets.calories, 1)))
                 .tint(remaining.isOverCalories ? .orange : .accentColor)
-            HStack {
+            let macros = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+                : AnyLayout(HStackLayout())
+            macros {
                 macro("Protein", remaining.protein)
-                Spacer()
+                if !typeSize.isAccessibilitySize { Spacer() }
                 macro("Carbs", remaining.carbs)
-                Spacer()
+                if !typeSize.isAccessibilitySize { Spacer() }
                 macro("Fat", remaining.fat)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .font(.footnote)
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
-        .animation(.default, value: eaten)
+        .animation(reduceMotion ? nil : .default, value: eaten)
+        // The chat needs the room more: past the first accessibility size, only the chat grows.
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .accessibilityElement(children: .combine)
     }
 

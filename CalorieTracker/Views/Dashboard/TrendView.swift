@@ -5,6 +5,8 @@ import Charts
 /// Tab 5: intake against the weight trend on one time axis. Stays an honest empty state
 /// until there are about three weeks of both (D47).
 struct TrendView: View {
+    /// Redraws when the text size changes, so scaled numbers follow it.
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(DayClock.self) private var clock
 
     @Query(sort: \MealEntry.dayKey) private var entries: [MealEntry]
@@ -12,6 +14,7 @@ struct TrendView: View {
     @Query private var targetRows: [Targets]
 
     private let windowDays = 28
+    @ScaledMetric(relativeTo: .caption2) private var axisWidth = 38.0
 
     var body: some View {
         NavigationStack {
@@ -47,7 +50,7 @@ struct TrendView: View {
     private func locked(_ gate: TrendGate) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Needs about three weeks")
-                .font(.system(size: 24, weight: .semibold).width(.condensed))
+                .font(.condensed(24))
             Text("This view lines up what you eat against your weight trend. Day-to-day weight swings hide real change, so it stays empty until there's enough of both to say something true.")
                 .foregroundStyle(Palette.muted)
             Text("Intake: \(min(gate.intakeDays, TrendGate.intakeDaysNeeded)) of \(TrendGate.intakeDaysNeeded) days logged. Weight: \(gate.readings) of \(TrendGate.readingsNeeded) readings.")
@@ -109,6 +112,8 @@ struct TrendView: View {
             }
         }
         .frame(height: 180)
+        // Chart labels can't fit the largest sizes; the text around the chart scales fully.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .accessibilityLabel("Daily calories against the \(target.formatted()) target")
 
         SectionHeading(title: "Weight, 7-day average")
@@ -143,6 +148,8 @@ struct TrendView: View {
             }
         }
         .frame(height: 160)
+        // Chart labels can't fit the largest sizes; the text around the chart scales fully.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .accessibilityLabel("Weight readings and 7-day average")
 
         if let balance = EnergyBalance(series: series, dayTotals: totals, today: today) {
@@ -164,7 +171,7 @@ struct TrendView: View {
         }
         .font(.caption2)
         .foregroundStyle(Palette.muted)
-        .frame(width: 38, alignment: .trailing)
+        .frame(width: axisWidth, alignment: .trailing)
     }
 
     private func balancePanel(_ balance: EnergyBalance) -> some View {
