@@ -32,6 +32,7 @@ struct SettingsView: View {
                 keySection
                 modelSection
                 targetsSection
+                usualMealsSection
                 healthSection
                 dataSection
                 unitsSection
@@ -123,6 +124,14 @@ struct SettingsView: View {
             NavigationLink("Work out my targets") {
                 TargetHelperView { reloadTargets() }
             }
+        }
+    }
+
+    private var usualMealsSection: some View {
+        Section {
+            NavigationLink("Usual meals") { UsualMealsView() }
+        } footer: {
+            Text("Meals you log by name, with exact numbers.")
         }
     }
 
