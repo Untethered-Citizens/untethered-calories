@@ -186,6 +186,10 @@ final class LogConversation {
         await run()
     }
 
+    /// True when Claude has nothing to forget: no messages sent yet in this conversation.
+    /// The "New chat" button is greyed out then, since tapping it would change nothing.
+    var isFresh: Bool { messages.isEmpty && outgoing == nil }
+
     /// Starts a fresh conversation. Cards already on screen still work.
     func startNewConversation() {
         messages = []

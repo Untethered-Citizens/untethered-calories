@@ -40,10 +40,11 @@ struct LogView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("New conversation", systemImage: "square.and.pencil") {
-                        conversation?.startNewConversation()
-                    }
-                    .disabled(conversation?.isSending ?? true)
+                    // Words, not a pencil icon, which reads as "edit". Greyed out when there's
+                    // nothing for Claude to forget.
+                    Button("New chat") { startNewChat() }
+                        .disabled(conversation.map { $0.isSending || $0.isFresh } ?? true)
+                        .accessibilityHint("Claude stops seeing the messages so far. Your log isn't changed.")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Settings", systemImage: "gearshape") { showingSettings = true }
@@ -152,11 +153,20 @@ struct LogView: View {
         case .newConversation:
             HStack {
                 VStack { Divider() }
-                Text("New conversation").font(.caption).foregroundStyle(.secondary).fixedSize()
+                Text("New chat · Claude won't see the messages above")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    // The lines either side shrink first, so the text stays on one line when it fits.
+                    .layoutPriority(1)
                 VStack { Divider() }
             }
             .padding(.vertical, 4)
         }
+    }
+
+    private func startNewChat() {
+        conversation?.startNewConversation()
+        AccessibilityNotification.Announcement("New chat started. Claude won't see the messages above.").post()
     }
 
     private var emptyState: some View {
@@ -186,7 +196,7 @@ struct LogView: View {
                     if failure.needsKey {
                         Button("Settings") { showingSettings = true }
                     } else if !failure.canRetry {
-                        Button("New conversation") { conversation.startNewConversation() }
+                        Button("New chat") { startNewChat() }
                     }
                 }
                 .buttonStyle(.bordered).controlSize(.small)

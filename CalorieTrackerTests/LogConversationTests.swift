@@ -432,6 +432,20 @@ struct LogConversationTests {
         #expect(conversation.items.contains { if case .newConversation = $0.kind { true } else { false } })
     }
 
+    @Test func newChatIsOnlyOfferedWhenThereIsSomethingToForget() async throws {
+        let stub = StubTransport([.http(200, reply([text("Which size?")], stop: "end_turn"))])
+        let conversation = make(stub)
+        #expect(conversation.isFresh)
+        await conversation.send("calories left?")
+        // Answered on the phone, so Claude has nothing to forget yet.
+        #expect(conversation.isFresh)
+        await conversation.send("a banana")
+        #expect(!conversation.isFresh)
+        conversation.startNewConversation()
+        #expect(conversation.isFresh)
+        guard case .newConversation = conversation.items.last?.kind else { Issue.record("Expected a divider"); return }
+    }
+
     @Test func cutOffToolCallIsAnsweredNextTime() async throws {
         let stub = StubTransport([
             .http(200, reply([toolUse("toolu_1", "get_day", #"{"date":"2026-09-29"}"#)], stop: "max_tokens")),
