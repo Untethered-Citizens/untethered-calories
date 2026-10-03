@@ -31,7 +31,7 @@ struct APIKeyEntryView: View {
                         Text("This doesn't look like an Anthropic key. They start with \"sk-ant-\".")
                             .foregroundStyle(.orange)
                     }
-                    Text("Create a key at console.anthropic.com under API Keys, then paste it here. Saving checks it with Anthropic, which costs nothing. It's stored only in this iPhone's Keychain.")
+                    Text("Create a key at platform.claude.com under Settings → API keys, then paste it here. Saving checks it with Anthropic, which costs nothing. It's stored only in this iPhone's Keychain.")
                 }
             }
 

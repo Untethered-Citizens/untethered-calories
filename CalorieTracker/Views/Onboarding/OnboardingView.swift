@@ -1,24 +1,34 @@
 import SwiftUI
 import SwiftData
 
-/// First launch: welcome and privacy, then the API key, then targets.
+/// First launch: welcome and privacy, the two tutorials (the key tutorial ends on the
+/// key step), then targets.
 /// Shown once; `onFinish` marks it done and moves to the main screen.
 struct OnboardingView: View {
     var onFinish: () -> Void
 
-    enum Step: Hashable { case key, targets }
-    @State private var path: [Step] = []
+    @State private var path: [OnboardingStep] = []
 
     var body: some View {
         NavigationStack(path: $path) {
-            WelcomeStep { path.append(.key) }
-                .navigationDestination(for: Step.self) { step in
+            WelcomeStep { advance(from: .welcome) }
+                .navigationDestination(for: OnboardingStep.self) { step in
                     switch step {
-                    case .key: KeyStep { path.append(.targets) }
-                    case .targets: TargetsStep(onFinish: onFinish)
+                    case .welcome:
+                        EmptyView()
+                    case .losingWeightTutorial:
+                        TutorialView(tutorial: .losingWeight, context: .onboarding) { advance(from: step) }
+                    case .keyTutorial:
+                        TutorialView(tutorial: .aiKey, context: .onboarding) { advance(from: step) }
+                    case .targets:
+                        TargetsStep(onFinish: onFinish)
                     }
                 }
         }
+    }
+
+    private func advance(from step: OnboardingStep) {
+        if let next = step.next { path.append(next) }
     }
 }
 
@@ -33,7 +43,7 @@ private struct WelcomeStep: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Log food by just saying what you ate")
                         .font(.largeTitle.bold())
-                    Text("Type it or take a photo. Claude works out the calories and macros, and the app keeps the tally.")
+                    Text("Type it or take a photo. Claude works out the calories and macros, and the app keeps the tally. Next, two short tutorials you can skip.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -52,71 +62,6 @@ private struct WelcomeStep: View {
             BottomBar { PrimaryButton(title: "Get started", action: onNext) }
         }
         .toolbar(.hidden, for: .navigationBar)
-    }
-}
-
-// MARK: Key
-
-private struct KeyStep: View {
-    var onNext: () -> Void
-
-    @State private var maskedKey: String?
-
-    var body: some View {
-        Form {
-            Section {
-                Text("The app talks to Claude using an API key from Anthropic. You pay Anthropic directly for what you use, usually a small amount per entry.")
-            }
-
-            Section {
-                NumberedStep(number: 1, text: "Go to console.anthropic.com and sign in, or create an account.")
-                NumberedStep(number: 2, text: "Under Billing, add some credit. API use is paid separately from a Claude subscription.")
-                NumberedStep(number: 3, text: "Open API Keys, tap Create Key, and copy it.")
-                Link(destination: URL(string: "https://console.anthropic.com/")!) {
-                    Label("Open the Anthropic Console", systemImage: "arrow.up.right.square")
-                }
-            } header: {
-                Text("Get a key")
-            }
-
-            Section {
-                if let maskedKey {
-                    LabeledContent("Key saved") {
-                        Label(maskedKey, systemImage: "checkmark.circle.fill")
-                            .monospaced()
-                            .foregroundStyle(.green)
-                    }
-                    NavigationLink("Use a different key") {
-                        APIKeyEntryView(title: "Replace key") { reload() }
-                    }
-                } else {
-                    NavigationLink("Paste your key") {
-                        APIKeyEntryView(title: "Add key") { reload() }
-                    }
-                }
-            } header: {
-                Text("Add it here")
-            } footer: {
-                Text("The key is checked with Anthropic (free) and stored only in this iPhone's Keychain.")
-            }
-        }
-        .navigationTitle("Your API key")
-        .safeAreaInset(edge: .bottom) {
-            BottomBar {
-                PrimaryButton(title: "Continue", action: onNext)
-                    .disabled(maskedKey == nil)
-                if maskedKey == nil {
-                    Button("Skip for now — add it later in Settings", action: onNext)
-                        .font(.footnote)
-                        .padding(.bottom, 8)
-                }
-            }
-        }
-        .onAppear(perform: reload)
-    }
-
-    private func reload() {
-        maskedKey = (try? APIKeyStore().load()).flatMap { $0 }.map(APIKeyStore.masked)
     }
 }
 
@@ -203,47 +148,6 @@ private struct WelcomePoint: View {
                 Text(text).foregroundStyle(.secondary)
             }
         }
-    }
-}
-
-private struct NumberedStep: View {
-    var number: Int
-    var text: String
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text("\(number)")
-                .font(.subheadline.bold())
-                .frame(width: 24, height: 24)
-                .background(.tint.opacity(0.15), in: Circle())
-            Text(text)
-        }
-    }
-}
-
-private struct PrimaryButton: View {
-    var title: String
-    var action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title).bold().frame(maxWidth: .infinity).padding(.vertical, 6)
-        }
-        .buttonStyle(.borderedProminent)
-        .padding(.horizontal, 24)
-        .padding(.vertical, 8)
-    }
-}
-
-/// The bottom bar holding an onboarding step's main button, with a backing so the list
-/// scrolling underneath doesn't show through.
-private struct BottomBar<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(spacing: 4) { content }
-            .frame(maxWidth: .infinity)
-            .background(.bar)
     }
 }
 
