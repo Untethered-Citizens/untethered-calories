@@ -279,6 +279,8 @@ struct LogView: View {
 
                 TextField("What did you eat?", text: $draft, axis: .vertical)
                     .lineLimit(1...5)
+                    // Grows with the text however it arrives (dictation included), up to five lines (issue #6).
+                    .fixedSize(horizontal: false, vertical: true)
                     .focused($composerFocused)
                     .padding(.horizontal, 16).padding(.vertical, 11)
                     .background(Palette.panel, in: .rect(cornerRadius: 22))

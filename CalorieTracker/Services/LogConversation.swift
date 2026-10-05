@@ -44,6 +44,15 @@ final class LogConversation {
         let id: UUID
         var kind: ProposalKind
         var status: Status = .pending
+        /// Path A entries logged in the same reply as this estimate (a label item next to
+        /// estimated ones). Once the card is accepted, one line covers both (issue #6).
+        var loggedAlongside: LoggedAlongside?
+    }
+
+    struct LoggedAlongside: Codable {
+        /// The separate confirmation lines, removed from the thread once merged.
+        var itemIDs: [UUID]
+        var drafts: [EntryDraft]
     }
 
     struct Failure: Equatable {
@@ -295,20 +304,30 @@ final class LogConversation {
         let runner = ToolRunner(context: context, today: today, conversationHasPhoto: hasPhoto)
         var results: [JSONValue] = []
         var allTerminal = true
+        var logged = LoggedAlongside(itemIDs: [], drafts: [])
+        var estimateCard: UUID?
         for call in calls {
             let outcome = runner.run(call)
             results.append(ContentBlock.toolResult(id: call.id, text: outcome.text, isError: outcome.isError))
             allTerminal = allTerminal && outcome.isTerminal
             switch outcome.effect {
             case .none: break
-            case .logged(let line):
-                items.append(entry(.logged(line)))
+            case .logged(let line, let drafts):
+                let item = entry(.logged(line))
+                items.append(item)
+                logged.itemIDs.append(item.id)
+                logged.drafts += drafts
                 revision += 1
             case .proposal(let kind):
                 let id = UUID()
                 proposals[id] = Proposal(id: id, kind: kind)
                 items.append(entry(.proposal(id)))
+                if case .estimate = kind, estimateCard == nil { estimateCard = id }
             }
+        }
+        // One meal, half from a label and half estimated, still reads as one meal once accepted.
+        if let estimateCard, !logged.itemIDs.isEmpty {
+            proposals[estimateCard]?.loggedAlongside = logged
         }
         if allTerminal {
             deferredResults = results
@@ -381,7 +400,13 @@ final class LogConversation {
             try EntryWriter.commit(entries, confirmedByUser: true, in: context)
             try context.save()
             let runner = ToolRunner(context: context, today: today, conversationHasPhoto: hasPhoto)
-            let line = try runner.confirmation(for: entries.map(\.draft))
+            let alongside = proposals[id]?.loggedAlongside
+            let line = try runner.confirmation(for: (alongside?.drafts ?? []) + entries.map(\.draft))
+            if let alongside {
+                // The combined line replaces the earlier one, so the meal isn't confirmed twice.
+                let merged = Set(alongside.itemIDs)
+                items.removeAll { merged.contains($0.id) }
+            }
             let what = entries.map { "\($0.draft.description) (\($0.draft.calories) kcal, \($0.draft.protein)p/\($0.draft.carbs)c/\($0.draft.fat)f)" }
                 .joined(separator: "; ")
             finish(id, line: line, note: edited

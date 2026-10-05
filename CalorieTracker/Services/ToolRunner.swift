@@ -15,7 +15,7 @@ struct ToolOutcome: Sendable {
         /// A read: the model needs the result to carry on.
         case none
         /// Path A entries were written. `line` is the confirmation the user sees.
-        case logged(line: String)
+        case logged(line: String, drafts: [EntryDraft])
         case proposal(ProposalKind)
     }
 
@@ -82,7 +82,7 @@ struct ToolRunner {
             return .error(Self.describe(rejected, entries: pending))
         }
         let line = try confirmation(for: pending.map(\.draft))
-        return ToolOutcome(text: "Logged. The app showed the user: \"\(line)\"", effect: .logged(line: line))
+        return ToolOutcome(text: "Logged. The app showed the user: \"\(line)\"", effect: .logged(line: line, drafts: pending.map(\.draft)))
     }
 
     private func proposeEstimate(_ input: EntriesInput) throws -> ToolOutcome {

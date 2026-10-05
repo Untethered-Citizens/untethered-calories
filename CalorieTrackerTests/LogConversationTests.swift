@@ -245,6 +245,51 @@ struct LogConversationTests {
         #expect((next[1]["text"] as? String)?.contains("accepted your estimate") == true)
     }
 
+    @Test func labelAndEstimateInOneReplyEndUpAsOneLine() async throws {
+        // Issue #6: a label item logs at once, the rest is a card. Once accepted, one line covers the meal.
+        let label = entries(entry(meal: "Breakfast", description: "Greek yogurt", calories: 160, protein: 15,
+                                  carbs: 12, fat: 6, basis: "label_photo"))
+        let estimate = entries(entry(meal: "Breakfast", description: "Granola", calories: 190, protein: 5,
+                                     carbs: 25, fat: 8, source: "Estimate", basis: "description"))
+        let stub = StubTransport([.http(200, reply([toolUse("toolu_1", "log_entries", label),
+                                                    toolUse("toolu_2", "propose_estimate", estimate)], stop: "tool_use"))])
+        let conversation = make(stub)
+        await conversation.send("yogurt from this label with granola", photos: [Data([0xFF, 0xD8, 0xFF])])
+
+        let isLogged: (LogConversation.Item) -> Bool = { if case .logged = $0.kind { true } else { false } }
+        #expect(try storedEntries().count == 1) // the label item, straight away
+        #expect(conversation.items.contains(where: isLogged)) // and its own line while the card waits
+        guard case .proposal(let id) = conversation.items.last?.kind else {
+            Issue.record("Expected a card"); return
+        }
+
+        conversation.accept(id)
+        #expect(try storedEntries().count == 2)
+        #expect(!conversation.items.contains(where: isLogged))
+        guard case .done(let line) = conversation.proposals[id]?.status else {
+            Issue.record("Expected the card to be done"); return
+        }
+        #expect(line.contains("Greek yogurt, 160 cal (label)"))
+        #expect(line.contains("Granola, 190 cal (estimate)"))
+        #expect(line.contains("350 of 1,785 today"))
+    }
+
+    @Test func dismissedEstimateKeepsTheLabelLine() async throws {
+        let label = entries(entry(meal: "Breakfast", description: "Greek yogurt", calories: 160, protein: 15,
+                                  carbs: 12, fat: 6, basis: "label_photo"))
+        let estimate = entries(entry(meal: "Breakfast", description: "Granola", calories: 190, protein: 5,
+                                     carbs: 25, fat: 8, source: "Estimate", basis: "description"))
+        let stub = StubTransport([.http(200, reply([toolUse("toolu_1", "log_entries", label),
+                                                    toolUse("toolu_2", "propose_estimate", estimate)], stop: "tool_use"))])
+        let conversation = make(stub)
+        await conversation.send("yogurt from this label with granola", photos: [Data([0xFF, 0xD8, 0xFF])])
+        guard case .proposal(let id) = conversation.items.last?.kind else {
+            Issue.record("Expected a card"); return
+        }
+        conversation.dismiss(id)
+        #expect(conversation.items.contains { if case .logged = $0.kind { true } else { false } })
+    }
+
     @Test func editedEstimateIsCheckedAndStaysAnEstimate() async throws {
         let input = entries(entry(meal: "Dinner", description: "Pasta", calories: 600, protein: 20, carbs: 90,
                                   fat: 18, source: "Estimate", basis: "description"))
