@@ -18,7 +18,7 @@ enum DataExport {
         }
 
         let folder = FileManager.default.temporaryDirectory
-            .appendingPathComponent("Calorie Tracker export \(today.iso)", isDirectory: true)
+            .appendingPathComponent("Untethered Calories export \(today.iso)", isDirectory: true)
         try? FileManager.default.removeItem(at: folder)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let meals = folder.appendingPathComponent("meals.csv")

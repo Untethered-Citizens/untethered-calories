@@ -17,7 +17,7 @@ final class HealthWeight {
     private(set) var needsRequest = true
 
     /// Shown when access was asked for but no weights have arrived.
-    static let noReadingsHelp = "No weights in the last 90 days. Tap Add weight, or weigh in on a smart scale that saves to Apple Health. If you've weighed in and nothing shows, check access: Settings → Privacy & Security → Health → Calorie Tracker, and turn on Weight."
+    static let noReadingsHelp = "No weights in the last 90 days. Tap Add weight, or weigh in on a smart scale that saves to Apple Health. If you've weighed in and nothing shows, check access: Settings → Privacy & Security → Health → Untethered, and turn on Weight."
 
     private let store = HKHealthStore()
     private let bodyMass = HKQuantityType(.bodyMass)
@@ -50,7 +50,7 @@ final class HealthWeight {
         case notAllowed
 
         var errorDescription: String? {
-            "Calorie Tracker isn't allowed to save weight to Apple Health. To allow it: Settings → Privacy & Security → Health → Calorie Tracker, and turn on Weight under the apps allowed to write data."
+            "Untethered Calories isn't allowed to save weight to Apple Health. To allow it: Settings → Privacy & Security → Health → Untethered, and turn on Weight under the apps allowed to write data."
         }
     }
 
