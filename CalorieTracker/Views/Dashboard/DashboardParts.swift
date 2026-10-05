@@ -29,7 +29,7 @@ struct HeroNumber: View {
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
             Text(unit)
-                .font(.callout)
+                .font(.barlow(.callout))
                 .foregroundStyle(Palette.muted)
         }
         .accessibilityElement(children: .combine)
@@ -68,7 +68,7 @@ struct BudgetStrip: View {
                 if total > target {
                     let x = CGFloat(target) / CGFloat(scale) * width
                     Rectangle().fill(Palette.ink).frame(width: 2, height: 46).offset(x: x - 1)
-                    Text("target").font(.caption).foregroundStyle(Palette.muted)
+                    Text("target").font(.barlow(.caption)).foregroundStyle(Palette.muted)
                         .fixedSize().position(x: x, y: -16)
                 }
             }
@@ -98,7 +98,7 @@ struct SourceLegend: View {
                 }
             }
         }
-        .font(.footnote)
+        .font(.barlow(.footnote))
         .foregroundStyle(Palette.muted)
         .accessibilityElement(children: .combine)
     }
@@ -148,7 +148,7 @@ struct MacroBars: View {
             }
         }
         .frame(height: 10)
-        let amount = Text("\(rounded)").font(.number(20)) + Text(" / \(target) g").font(.subheadline).foregroundStyle(Palette.muted)
+        let amount = Text("\(rounded)").font(.number(20)) + Text(" / \(target) g").font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
         return Group {
             if typeSize.isAccessibilitySize {
                 // Too big to share a line: name and amount above, bar below.
@@ -178,7 +178,7 @@ struct SourceTag: View {
     var source: Source
     var body: some View {
         Text(source.shortName)
-            .font(.caption.weight(.medium))
+            .font(.barlow(.caption, weight: .medium))
             .lineLimit(1)
             .fixedSize()
             .foregroundStyle(source.tagColor)
@@ -207,14 +207,14 @@ struct MealRow: View {
                     HStack(spacing: 8) {
                         SourceTag(source: draft.source)
                         if draft.containsAlcohol {
-                            Image(systemName: "wineglass").font(.caption).foregroundStyle(Palette.muted)
+                            Image(systemName: "wineglass").font(.barlow(.caption)).foregroundStyle(Palette.muted)
                                 .accessibilityLabel("Contains alcohol")
                         }
                     }
                 }
-                Text(draft.description).font(.subheadline).foregroundStyle(Palette.muted)
+                Text(draft.description).font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
                 Text("\(draft.protein)p · \(draft.carbs)c · \(draft.fat)f")
-                    .font(.footnote).monospacedDigit().foregroundStyle(Palette.muted)
+                    .font(.barlow(.footnote)).monospacedDigit().foregroundStyle(Palette.muted)
             }
             if !big { Spacer(minLength: 0) }
             Text(draft.calories.formatted()).font(.number(24, relativeTo: .title2))

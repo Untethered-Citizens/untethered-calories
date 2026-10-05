@@ -85,7 +85,7 @@ private struct WeekContent: View {
                 MacroBars(protein: stats.averageProtein ?? 0, carbs: stats.averageCarbs ?? 0,
                           fat: stats.averageFat ?? 0, targets: TargetHistory.effective(on: end, in: periods))
                 Text(stats.honestyNote())
-                    .font(.subheadline)
+                    .font(.barlow(.subheadline))
                     .foregroundStyle(Palette.muted)
                     .padding(.top, 8)
             }
@@ -112,7 +112,7 @@ private struct WeekContent: View {
                 .disabled(!canGoBack)
             Spacer()
             Text("\(text.dayName(stats.days.first!, template: "MMM d")) – \(text.dayName(stats.days.last!, template: "MMM d"))")
-                .font(.headline)
+                .font(.barlow(.headline))
             Spacer()
             Button("Later week", systemImage: "chevron.right") { weeksBack -= 1 }
                 .disabled(weeksBack == 0)
@@ -135,12 +135,12 @@ private struct WeekContent: View {
                 Spacer()
                 if let totals, totals.entryCount > 0 {
                     (Text(totals.calories.formatted()).font(.number(26, weight: .bold, relativeTo: .title2))
-                     + Text(" / \(target.calories.formatted())").font(.subheadline).foregroundStyle(Palette.muted))
+                     + Text(" / \(target.calories.formatted())").font(.barlow(.subheadline)).foregroundStyle(Palette.muted))
                 }
             }
             .foregroundStyle(Palette.ink)
             Text(daySubline(day, totals, target: target.calories))
-                .font(.subheadline)
+                .font(.barlow(.subheadline))
                 .foregroundStyle(Palette.muted)
             if let totals, totals.entryCount > 0 {
                 MacroBars(protein: Double(totals.protein), carbs: Double(totals.carbs),
@@ -168,10 +168,10 @@ private struct WeekContent: View {
         if let summary, !summary.mealsDetail.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(summary.mealsDetail.split(separator: "\n").enumerated()), id: \.offset) { _, line in
-                    Text(line).font(.subheadline).foregroundStyle(Palette.ink)
+                    Text(line).font(.barlow(.subheadline)).foregroundStyle(Palette.ink)
                 }
                 Text("Older days are kept as a summary, so their meals can't be edited.")
-                    .font(.footnote).foregroundStyle(Palette.muted)
+                    .font(.barlow(.footnote)).foregroundStyle(Palette.muted)
             }
             .dashboardRow()
         }
@@ -197,7 +197,7 @@ private struct WeekContent: View {
     private func statPanel(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(value).font(.number(30, weight: .bold, relativeTo: .title1)).minimumScaleFactor(0.6).lineLimit(1)
-            Text(label).font(.footnote).foregroundStyle(Palette.muted)
+            Text(label).font(.barlow(.footnote)).foregroundStyle(Palette.muted)
         }
         .foregroundStyle(Palette.ink)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -236,7 +236,7 @@ struct WeekChart: View {
                 if total.entryCount == 0 {
                     BarMark(x: .value("Day", day.iso), y: .value("Calories", 0))
                         .annotation(position: .top) {
-                            Text("no data").font(.caption2).foregroundStyle(Palette.muted)
+                            Text("no data").font(.barlow(.caption2)).foregroundStyle(Palette.muted)
                         }
                 } else {
                     BarMark(x: .value("Day", day.iso), y: .value("Calories", label))
@@ -267,7 +267,7 @@ struct WeekChart: View {
                         Text("target")
                         Text(target.formatted()).monospacedDigit()
                     }
-                    .font(.caption2)
+                    .font(.barlow(.caption2))
                     .foregroundStyle(Palette.muted)
                 }
             }
@@ -277,7 +277,7 @@ struct WeekChart: View {
                 AxisValueLabel {
                     if let iso = value.as(String.self), let day = LocalDate(iso: iso) {
                         Text(LogText().dayName(day, template: "EEE d") + (day == today ? " ·" : ""))
-                            .font(.caption)
+                            .font(.barlow(.caption))
                             .fontWeight(day == selected ? .semibold : .regular)
                             .foregroundStyle(day == selected ? Palette.ink : Palette.muted)
                     }

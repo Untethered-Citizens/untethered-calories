@@ -45,6 +45,7 @@ struct RetentionPromptView: View {
                 .buttonStyle(.bordered)
             }
             .padding(20)
+            .themedBackground()
             .navigationTitle("Old daily totals")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

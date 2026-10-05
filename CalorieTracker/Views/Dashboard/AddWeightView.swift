@@ -36,25 +36,29 @@ struct AddWeightView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    LabeledContent("Weight") {
-                        HStack(spacing: 4) {
-                            TextField(placeholder, text: $text)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .monospacedDigit()
-                                .focused($focused)
-                            Text(unit.rawValue).foregroundStyle(.secondary)
+                Group {
+                    Section {
+                        LabeledContent("Weight") {
+                            HStack(spacing: 4) {
+                                TextField(placeholder, text: $text)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .monospacedDigit()
+                                    .focused($focused)
+                                Text(unit.rawValue).foregroundStyle(.secondary)
+                            }
                         }
+                        DatePicker("When", selection: $taken, in: allowed)
+                    } footer: {
+                        Text("Saved to Apple Health, where readings from a smart scale go too. If you weigh in more than once a day, the last one counts.")
                     }
-                    DatePicker("When", selection: $taken, in: allowed)
-                } footer: {
-                    Text("Saved to Apple Health, where readings from a smart scale go too. If you weigh in more than once a day, the last one counts.")
+                    if let error {
+                        Section { Text(error).foregroundStyle(Palette.plum) }
+                    }
                 }
-                if let error {
-                    Section { Text(error).foregroundStyle(Palette.plum) }
-                }
+                .listRowBackground(Palette.panel)
             }
+            .themedBackground()
             .navigationTitle("Add weight")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

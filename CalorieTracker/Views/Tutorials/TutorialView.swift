@@ -56,7 +56,7 @@ struct TutorialView: View {
                     .disabled(maskedKey == nil)
                 if maskedKey == nil {
                     Button("Skip for now — add it later in Settings", action: onFinish)
-                        .font(.footnote)
+                        .font(.barlow(.footnote))
                         .padding(.bottom, 8)
                 }
             } else {
@@ -114,10 +114,10 @@ private struct TutorialCardPage: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("\(number) of \(count)")
-                        .font(.footnote)
+                        .font(.barlow(.footnote))
                         .foregroundStyle(Palette.muted)
                     Text(card.title)
-                        .font(.title2.bold())
+                        .font(.barlow(.title2, weight: .bold))
                         .foregroundStyle(Palette.ink)
                         .accessibilityAddTraits(.isHeader)
                 }
@@ -137,13 +137,13 @@ private struct TutorialCardPage: View {
                     .foregroundStyle(Palette.ink)
                 }
                 if let note = card.note {
-                    Text(note).font(.footnote).foregroundStyle(Palette.muted)
+                    Text(note).font(.barlow(.footnote)).foregroundStyle(Palette.muted)
                 }
                 if let link = card.link {
                     Link(destination: link.url) {
                         Label(link.title, systemImage: "arrow.up.right.square")
                     }
-                    .font(.body.weight(.medium))
+                    .font(.barlow(.body, weight: .medium))
                 }
                 if card.picture == .addKey {
                     KeyControls(maskedKey: maskedKey, onSaved: onKeySaved)

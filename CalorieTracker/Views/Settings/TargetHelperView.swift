@@ -36,77 +36,81 @@ struct TargetHelperView: View {
 
     var body: some View {
         Form {
-            Section {
-                Picker("Sex", selection: $sex) {
-                    Text("Female").tag(TargetCalculator.Sex.female)
-                    Text("Male").tag(TargetCalculator.Sex.male)
+            Group {
+                Section {
+                    Picker("Sex", selection: $sex) {
+                        Text("Female").tag(TargetCalculator.Sex.female)
+                        Text("Male").tag(TargetCalculator.Sex.male)
+                    }
+                    .pickerStyle(.segmented)
+                    NumberRow(label: "Age", value: $age, unit: "years", maxDigits: 3)
+                    if unit == .lb {
+                        LabeledContent("Height") {
+                            HStack(spacing: 4) {
+                                NumberField(placeholder: "–", value: $feet, maxDigits: 1).frame(maxWidth: 40)
+                                Text("ft").foregroundStyle(.secondary)
+                                NumberField(placeholder: "–", value: $inches, maxDigits: 2).frame(maxWidth: 40)
+                                Text("in").foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        NumberRow(label: "Height", value: $centimetres, unit: "cm", maxDigits: 3)
+                    }
+                    NumberRow(label: "Weight", value: $weight, unit: unit.rawValue, maxDigits: 3)
+                } header: {
+                    Text("About you")
+                } footer: {
+                    Text("Used only for this sum. None of it is saved. The formula uses sex because resting energy differs on average.")
                 }
-                .pickerStyle(.segmented)
-                NumberRow(label: "Age", value: $age, unit: "years", maxDigits: 3)
-                if unit == .lb {
-                    LabeledContent("Height") {
-                        HStack(spacing: 4) {
-                            NumberField(placeholder: "–", value: $feet, maxDigits: 1).frame(maxWidth: 40)
-                            Text("ft").foregroundStyle(.secondary)
-                            NumberField(placeholder: "–", value: $inches, maxDigits: 2).frame(maxWidth: 40)
-                            Text("in").foregroundStyle(.secondary)
+
+                Section("How active are you?") {
+                    Picker("Activity", selection: $activity) {
+                        ForEach(TargetCalculator.Activity.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+
+                Section("Your goal") {
+                    Picker("Goal", selection: $goal) {
+                        ForEach(TargetCalculator.Goal.allCases) { Text($0.label(unit)).tag($0) }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+
+                Section {
+                    if let result {
+                        LabeledContent("Calories", value: result.targets.calories.formatted())
+                        LabeledContent("Protein", value: "\(result.targets.protein) g")
+                        LabeledContent("Carbs", value: "\(result.targets.carbs) g")
+                        LabeledContent("Fat", value: "\(result.targets.fat) g")
+                        Button("Use these targets", action: save)
+                            .frame(maxWidth: .infinity)
+                            .bold()
+                    } else {
+                        Text("Fill in the questions above to see a suggestion.")
+                            .foregroundStyle(.secondary)
+                    }
+                    if let error { Text(error).foregroundStyle(.red) }
+                } header: {
+                    Text("Suggested targets")
+                } footer: {
+                    if let result {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("About \(result.maintenance.formatted()) calories a day would keep your weight steady.")
+                            if result.raisedToMinimum {
+                                Text("Your goal would go below \(TargetCalculator.minimumCalories(for: sex).formatted()) calories, so the suggestion stops there. Going lower is best done with a doctor or dietitian.")
+                                    .foregroundStyle(.orange)
+                            }
+                            Text("This is a rough starting point from a standard formula, not medical advice. Watch your weight trend for a few weeks and adjust.")
                         }
                     }
-                } else {
-                    NumberRow(label: "Height", value: $centimetres, unit: "cm", maxDigits: 3)
-                }
-                NumberRow(label: "Weight", value: $weight, unit: unit.rawValue, maxDigits: 3)
-            } header: {
-                Text("About you")
-            } footer: {
-                Text("Used only for this sum. None of it is saved. The formula uses sex because resting energy differs on average.")
-            }
-
-            Section("How active are you?") {
-                Picker("Activity", selection: $activity) {
-                    ForEach(TargetCalculator.Activity.allCases) { Text($0.label).tag($0) }
-                }
-                .pickerStyle(.inline)
-                .labelsHidden()
-            }
-
-            Section("Your goal") {
-                Picker("Goal", selection: $goal) {
-                    ForEach(TargetCalculator.Goal.allCases) { Text($0.label(unit)).tag($0) }
-                }
-                .pickerStyle(.inline)
-                .labelsHidden()
-            }
-
-            Section {
-                if let result {
-                    LabeledContent("Calories", value: result.targets.calories.formatted())
-                    LabeledContent("Protein", value: "\(result.targets.protein) g")
-                    LabeledContent("Carbs", value: "\(result.targets.carbs) g")
-                    LabeledContent("Fat", value: "\(result.targets.fat) g")
-                    Button("Use these targets", action: save)
-                        .frame(maxWidth: .infinity)
-                        .bold()
-                } else {
-                    Text("Fill in the questions above to see a suggestion.")
-                        .foregroundStyle(.secondary)
-                }
-                if let error { Text(error).foregroundStyle(.red) }
-            } header: {
-                Text("Suggested targets")
-            } footer: {
-                if let result {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("About \(result.maintenance.formatted()) calories a day would keep your weight steady.")
-                        if result.raisedToMinimum {
-                            Text("Your goal would go below \(TargetCalculator.minimumCalories(for: sex).formatted()) calories, so the suggestion stops there. Going lower is best done with a doctor or dietitian.")
-                                .foregroundStyle(.orange)
-                        }
-                        Text("This is a rough starting point from a standard formula, not medical advice. Watch your weight trend for a few weeks and adjust.")
-                    }
                 }
             }
+            .listRowBackground(Palette.panel)
         }
+        .themedBackground()
         .navigationTitle("Work out my targets")
         .navigationBarTitleDisplayMode(.inline)
         .keyboardDoneButton()

@@ -36,6 +36,7 @@ struct LogView: View {
                     composer(conversation)
                 }
             }
+            .background(Palette.background)
             .navigationTitle("Calorie Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -109,7 +110,7 @@ struct LogView: View {
                 if !photos.isEmpty { PhotoStrip(photos: photos, size: 88) }
                 if notKept > 0 {
                     Label(notKept == 1 ? "Photo (not kept)" : "\(notKept) photos (not kept)", systemImage: "photo")
-                        .font(.caption)
+                        .font(.barlow(.caption))
                         .foregroundStyle(.secondary)
                 }
                 if !text.isEmpty {
@@ -128,14 +129,14 @@ struct LogView: View {
                 .padding(.trailing, 40)
         case .logged(let line):
             Label(line, systemImage: "checkmark.circle.fill")
-                .font(.subheadline)
+                .font(.barlow(.subheadline))
                 .foregroundStyle(.primary)
                 .symbolRenderingMode(.multicolor)
                 .padding(.trailing, 24)
         case .local(let answer):
             VStack(alignment: .leading, spacing: 4) {
                 Text(answer)
-                Text("Worked out on your iPhone").font(.caption2).foregroundStyle(.secondary)
+                Text("Worked out on your iPhone").font(.barlow(.caption2)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
             .background(.background.secondary, in: .rect(cornerRadius: 16))
@@ -148,13 +149,13 @@ struct LogView: View {
                              onDismiss: { conversation.dismiss(id) })
             }
         case .notice(let text):
-            Text(text).font(.footnote).foregroundStyle(.secondary)
+            Text(text).font(.barlow(.footnote)).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
         case .newConversation:
             HStack {
                 VStack { Divider() }
                 Text("New chat · Claude won't see the messages above")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.barlow(.caption)).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     // The lines either side shrink first, so the text stays on one line when it fits.
                     .layoutPriority(1)
@@ -172,12 +173,12 @@ struct LogView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Tell me what you ate, or send a photo.")
-                .font(.headline)
+                .font(.barlow(.headline))
             Text("“300 cal protein bar for a snack”\n“Chicken burrito and chips for lunch”\nA photo of a nutrition label or your plate")
                 .foregroundStyle(.secondary)
             if !hasKey {
                 Text("Add your Anthropic API key in Settings to start. You can already ask “calories left?”.")
-                    .font(.footnote).foregroundStyle(.orange)
+                    .font(.barlow(.footnote)).foregroundStyle(.orange)
                     .padding(.top, 4)
             }
         }
@@ -188,7 +189,7 @@ struct LogView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 8) {
-                Text(failure.message).font(.footnote)
+                Text(failure.message).font(.barlow(.footnote))
                 HStack {
                     if failure.canRetry {
                         Button("Retry") { Task { await conversation.retry() } }
@@ -225,7 +226,7 @@ struct LogView: View {
                     Button("Choose from library", systemImage: "photo.on.rectangle") { showingLibrary = true }
                 } label: {
                     Image(systemName: "camera.fill")
-                        .font(.title3)
+                        .font(.barlow(.title3))
                         .frame(minWidth: 36, minHeight: 36)
                 }
                 .disabled(!conversation.acceptsPhotos || photos.count >= PhotoPrep.maxPhotosPerMessage)
@@ -241,7 +242,7 @@ struct LogView: View {
                     send(conversation)
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.largeTitle)
+                        .font(.barlow(.largeTitle))
                 }
                 .disabled(conversation.isSending || (draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photos.isEmpty))
                 .accessibilityLabel("Send")
@@ -330,7 +331,7 @@ struct RemainingHeader: View {
         VStack(spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(abs(remaining.calories).formatted())
-                    .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                    .font(.number(40, relativeTo: .largeTitle))
                     .monospacedDigit()
                     .contentTransition(.numericText())
                 Text(remaining.isOverCalories ? "calories over today" : "calories left today")
@@ -338,7 +339,7 @@ struct RemainingHeader: View {
                 Spacer(minLength: 0)
             }
             Text("\(eaten.calories.formatted()) of \(targets.calories.formatted()) calories eaten")
-                .font(.subheadline).monospacedDigit().foregroundStyle(.secondary)
+                .font(.barlow(.subheadline)).monospacedDigit().foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             ProgressView(value: Double(min(eaten.calories, targets.calories)), total: Double(max(targets.calories, 1)))
                 .tint(remaining.isOverCalories ? .orange : .accentColor)
@@ -353,7 +354,7 @@ struct RemainingHeader: View {
                 macro("Fat", remaining.fat)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .font(.footnote)
+            .font(.barlow(.footnote))
         }
         .padding(.horizontal)
         .padding(.vertical, 10)

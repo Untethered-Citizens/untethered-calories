@@ -36,31 +36,35 @@ struct TargetsEditorView: View {
 
     var body: some View {
         Form {
-            Section {
-                NumberRow(label: "Calories", value: $calories, unit: "cal")
-                NumberRow(label: "Protein", value: $protein, unit: "g")
-                NumberRow(label: "Carbs", value: $carbs, unit: "g")
-                NumberRow(label: "Fat", value: $fat, unit: "g")
-            } footer: {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Your macros add up to \(macroCalories.formatted()) calories.")
-                    if macrosDisagree {
-                        Text("That's more than 15% away from your calorie target. Check the numbers.")
-                            .foregroundStyle(.orange)
+            Group {
+                Section {
+                    NumberRow(label: "Calories", value: $calories, unit: "cal")
+                    NumberRow(label: "Protein", value: $protein, unit: "g")
+                    NumberRow(label: "Carbs", value: $carbs, unit: "g")
+                    NumberRow(label: "Fat", value: $fat, unit: "g")
+                } footer: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Your macros add up to \(macroCalories.formatted()) calories.")
+                        if macrosDisagree {
+                            Text("That's more than 15% away from your calorie target. Check the numbers.")
+                                .foregroundStyle(.orange)
+                        }
                     }
                 }
+                Section {
+                    TextField("For example, lose about 1 lb a week", text: $goalNote)
+                } header: {
+                    Text("Goal (optional)")
+                } footer: {
+                    Text("Changes apply from today. Past days keep the targets they had.")
+                }
+                if let error {
+                    Text(error).foregroundStyle(.red)
+                }
             }
-            Section {
-                TextField("For example, lose about 1 lb a week", text: $goalNote)
-            } header: {
-                Text("Goal (optional)")
-            } footer: {
-                Text("Changes apply from today. Past days keep the targets they had.")
-            }
-            if let error {
-                Text(error).foregroundStyle(.red)
-            }
+            .listRowBackground(Palette.panel)
         }
+        .themedBackground()
         .navigationTitle("Daily targets")
         .navigationBarTitleDisplayMode(.inline)
         .keyboardDoneButton()

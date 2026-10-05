@@ -37,41 +37,45 @@ struct ModelPickerView: View {
 
     var body: some View {
         List {
-            if loading && models.isEmpty {
-                HStack(spacing: 10) {
-                    ProgressView()
-                    Text("Getting Anthropic's current models…").foregroundStyle(.secondary)
-                }
-            }
-            if let failure {
-                Section {
-                    Text(failure.userMessage).foregroundStyle(.red)
-                    Button("Try again") { Task { await load() } }
-                }
-            }
-            if !models.isEmpty {
-                Section {
-                    ForEach(main) { model in
-                        Button { choose(model) } label: { row(model) }
-                            .tint(.primary)
+            Group {
+                if loading && models.isEmpty {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("Getting Anthropic's current models…").foregroundStyle(.secondary)
                     }
-                } footer: {
-                    Text("Sonnet is recommended. It's accurate with descriptions, nutrition labels and meal photos, at a moderate cost per entry. Larger models cost more each time you log.")
                 }
-                if !older.isEmpty {
+                if let failure {
                     Section {
-                        DisclosureGroup(isExpanded: $showingOlder) {
-                            ForEach(older) { model in
-                                Button { choose(model) } label: { row(model) }
-                                    .tint(.primary)
+                        Text(failure.userMessage).foregroundStyle(.red)
+                        Button("Try again") { Task { await load() } }
+                    }
+                }
+                if !models.isEmpty {
+                    Section {
+                        ForEach(main) { model in
+                            Button { choose(model) } label: { row(model) }
+                                .tint(.primary)
+                        }
+                    } footer: {
+                        Text("Sonnet is recommended. It's accurate with descriptions, nutrition labels and meal photos, at a moderate cost per entry. Larger models cost more each time you log.")
+                    }
+                    if !older.isEmpty {
+                        Section {
+                            DisclosureGroup(isExpanded: $showingOlder) {
+                                ForEach(older) { model in
+                                    Button { choose(model) } label: { row(model) }
+                                        .tint(.primary)
+                                }
+                            } label: {
+                                Text("Show older models (\(older.count))")
                             }
-                        } label: {
-                            Text("Show older models (\(older.count))")
                         }
                     }
                 }
             }
+            .listRowBackground(Palette.panel)
         }
+        .themedBackground()
         .navigationTitle("Model")
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
@@ -85,13 +89,13 @@ struct ModelPickerView: View {
                     Text(model.displayName)
                     if model.id == recommendedID {
                         Text("Recommended")
-                            .font(.caption.weight(.semibold))
+                            .font(.barlow(.caption, weight: .semibold))
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(.green.opacity(0.15), in: Capsule())
                             .foregroundStyle(.green)
                     }
                 }
-                Text(model.id).font(.caption).monospaced().foregroundStyle(.secondary)
+                Text(model.id).font(.barlow(.caption)).monospaced().foregroundStyle(.secondary)
             }
             Spacer()
             if model.id == selected {

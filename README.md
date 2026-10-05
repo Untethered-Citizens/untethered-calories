@@ -15,3 +15,7 @@ A conversational calorie and macro tracker for iPhone. Tell it, or show it a pho
 
 ## Building
 Requires Xcode (latest) on macOS. Build instructions will be added once the Xcode project exists.
+
+## Credits
+
+The app uses the [Barlow](https://github.com/jpt/barlow) and Barlow Condensed typefaces by The Barlow Project Authors, under the SIL Open Font License 1.1 (`CalorieTracker/Resources/Fonts/OFL.txt`).

@@ -25,7 +25,7 @@ struct ProposalCard: View {
     private var header: some View {
         HStack {
             Label(title, systemImage: icon)
-                .font(.subheadline.weight(.semibold))
+                .font(.barlow(.subheadline, weight: .semibold))
             Spacer()
             if proposal.status == .pending {
                 Button("Dismiss", systemImage: "xmark", action: onDismiss)
@@ -45,20 +45,20 @@ struct ProposalCard: View {
             if entries.count > 1 {
                 let total = NutritionTotals(entries.map(\.draft))
                 Text("Total \(total.calories.formatted()) cal")
-                    .font(.footnote.weight(.semibold))
+                    .font(.barlow(.footnote, weight: .semibold))
             }
         case .targets(let targets, let from, let goalNote):
             Text("\(targets.calories.formatted()) cal · \(targets.protein)p / \(targets.carbs)c / \(targets.fat)f")
                 .monospacedDigit()
             Text(from == today ? "From today" : "From \(LogText().dayName(from))")
-                .font(.footnote).foregroundStyle(.secondary)
-            if !goalNote.isEmpty { Text(goalNote).font(.footnote).foregroundStyle(.secondary) }
+                .font(.barlow(.footnote)).foregroundStyle(.secondary)
+            if !goalNote.isEmpty { Text(goalNote).font(.barlow(.footnote)).foregroundStyle(.secondary) }
         case .usualMeal(let input, let meal, let source, let replaces):
             Text("\(meal.rawValue) · \(input.description)")
             Text("\(input.calories.formatted()) cal · \(input.protein)p / \(input.carbs)c / \(input.fat)f · \(source.rawValue)")
-                .font(.footnote).monospacedDigit().foregroundStyle(.secondary)
+                .font(.barlow(.footnote)).monospacedDigit().foregroundStyle(.secondary)
             if replaces {
-                Text("Replaces the one saved with this name.").font(.footnote).foregroundStyle(.orange)
+                Text("Replaces the one saved with this name.").font(.barlow(.footnote)).foregroundStyle(.orange)
             }
         }
     }
@@ -81,10 +81,10 @@ struct ProposalCard: View {
             } icon: {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
             }
-            .font(.footnote)
+            .font(.barlow(.footnote))
         case .dismissed:
             Text("Dismissed. Nothing was saved.")
-                .font(.footnote).foregroundStyle(.secondary)
+                .font(.barlow(.footnote)).foregroundStyle(.secondary)
         }
     }
 
@@ -127,7 +127,7 @@ struct EntryLine: View {
                 Text("\(draft.calories.formatted()) cal · \(draft.protein)p / \(draft.carbs)c / \(draft.fat)f")
                 if draft.containsAlcohol { Image(systemName: "wineglass").accessibilityLabel("Contains alcohol") }
             }
-            .font(.footnote)
+            .font(.barlow(.footnote))
             .monospacedDigit()
             .foregroundStyle(.secondary)
         }
@@ -152,36 +152,40 @@ struct EntryEditView: View {
     var body: some View {
         NavigationStack {
             Form {
-                if oneMeal {
-                    Section {
-                        mealPicker(sharedMealBinding)
-                    } footer: {
-                        Text("For all \(drafts.count) items.")
+                Group {
+                    if oneMeal {
+                        Section {
+                            mealPicker(sharedMealBinding)
+                        } footer: {
+                            Text("For all \(drafts.count) items.")
+                        }
+                    }
+                    ForEach(drafts.indices, id: \.self) { index in
+                        Section {
+                            TextField("What it was", text: $drafts[index].description, axis: .vertical)
+                            if !oneMeal { mealPicker($drafts[index].meal) }
+                            DatePicker("Day", selection: dateBinding(index),
+                                       in: ...LocalDate.today(in: timeZone).date(in: timeZone),
+                                       displayedComponents: .date)
+                                .environment(\.timeZone, timeZone)
+                            NumberRow(label: "Calories", value: $drafts[index].calories, unit: "cal")
+                            NumberRow(label: "Protein", value: $drafts[index].protein, unit: "g", maxDigits: 4)
+                            NumberRow(label: "Carbs", value: $drafts[index].carbs, unit: "g", maxDigits: 4)
+                            NumberRow(label: "Fat", value: $drafts[index].fat, unit: "g", maxDigits: 4)
+                            Toggle("Contains alcohol", isOn: $drafts[index].containsAlcohol)
+                        } header: {
+                            Text(drafts.count > 1 ? "Item \(index + 1)" : "Entry")
+                        } footer: {
+                            footer(for: drafts[index])
+                        }
+                    }
+                    if let error {
+                        Text(error).foregroundStyle(.red).font(.barlow(.footnote))
                     }
                 }
-                ForEach(drafts.indices, id: \.self) { index in
-                    Section {
-                        TextField("What it was", text: $drafts[index].description, axis: .vertical)
-                        if !oneMeal { mealPicker($drafts[index].meal) }
-                        DatePicker("Day", selection: dateBinding(index),
-                                   in: ...LocalDate.today(in: timeZone).date(in: timeZone),
-                                   displayedComponents: .date)
-                            .environment(\.timeZone, timeZone)
-                        NumberRow(label: "Calories", value: $drafts[index].calories, unit: "cal")
-                        NumberRow(label: "Protein", value: $drafts[index].protein, unit: "g", maxDigits: 4)
-                        NumberRow(label: "Carbs", value: $drafts[index].carbs, unit: "g", maxDigits: 4)
-                        NumberRow(label: "Fat", value: $drafts[index].fat, unit: "g", maxDigits: 4)
-                        Toggle("Contains alcohol", isOn: $drafts[index].containsAlcohol)
-                    } header: {
-                        Text(drafts.count > 1 ? "Item \(index + 1)" : "Entry")
-                    } footer: {
-                        footer(for: drafts[index])
-                    }
-                }
-                if let error {
-                    Text(error).foregroundStyle(.red).font(.footnote)
-                }
+                .listRowBackground(Palette.panel)
             }
+            .themedBackground()
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .keyboardDoneButton()

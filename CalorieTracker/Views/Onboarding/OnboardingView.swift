@@ -39,29 +39,54 @@ private struct WelcomeStep: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 24) {
+                BrandLockup()
+
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Log food by just saying what you ate")
-                        .font(.largeTitle.bold())
+                        .font(.custom(BrandFont.condensed(.semibold), size: 42, relativeTo: .largeTitle))
+                        .accessibilityAddTraits(.isHeader)
                     Text("Type it or take a photo. Claude works out the calories and macros, and the app keeps the tally. Next, two short tutorials you can skip.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Palette.muted)
                 }
 
-                VStack(alignment: .leading, spacing: 20) {
-                    WelcomePoint(icon: "key.fill", title: "Your own Anthropic key",
+                VStack(spacing: 0) {
+                    WelcomePoint(icon: "key", title: "Your own Anthropic key",
                           text: "What you type or photograph is sent to Anthropic under your own account, and billed to it. There's no server of ours in between.")
+                    Divider().overlay(Palette.rule).padding(.leading, 70)
                     WelcomePoint(icon: "iphone", title: "Everything else stays on this iPhone",
                           text: "Your log, totals and targets are stored only here. Photos aren't kept after they're read.")
-                    WelcomePoint(icon: "hand.raised.fill", title: "No account, no ads, no tracking",
+                    Divider().overlay(Palette.rule).padding(.leading, 70)
+                    WelcomePoint(icon: "hand.raised", title: "No account, no ads, no tracking",
                           text: "Nothing to sign up for, and nothing about you is collected.")
                 }
+                .background(Palette.panel, in: .rect(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Palette.rule))
             }
-            .padding(24)
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
         }
+        .background(Palette.background)
         .safeAreaInset(edge: .bottom) {
             BottomBar { PrimaryButton(title: "Get started", action: onNext) }
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+/// The mark beside the app's name, as on the welcome screen.
+private struct BrandLockup: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Image("BrandMark")
+                .resizable()
+                .frame(width: 32, height: 32)
+                .accessibilityHidden(true)
+            Text("Untethered Calories")
+                .font(.condensed(22, relativeTo: .title3))
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -78,34 +103,38 @@ private struct TargetsStep: View {
 
     var body: some View {
         Form {
-            Section {
-                LabeledContent("Calories", value: targets.calories.formatted())
-                LabeledContent("Protein", value: "\(targets.protein) g")
-                LabeledContent("Carbs", value: "\(targets.carbs) g")
-                LabeledContent("Fat", value: "\(targets.fat) g")
-            } header: {
-                Text("Your daily targets")
-            } footer: {
-                Text("You can change these any time in Settings.")
-            }
-
-            Section {
-                NavigationLink {
-                    TargetHelperView { reload() }
-                } label: {
-                    Label("Work them out for me", systemImage: "wand.and.stars")
+            Group {
+                Section {
+                    LabeledContent("Calories", value: targets.calories.formatted())
+                    LabeledContent("Protein", value: "\(targets.protein) g")
+                    LabeledContent("Carbs", value: "\(targets.carbs) g")
+                    LabeledContent("Fat", value: "\(targets.fat) g")
+                } header: {
+                    Text("Your daily targets")
+                } footer: {
+                    Text("You can change these any time in Settings.")
                 }
-                NavigationLink {
-                    TargetsEditorView { reload() }
-                } label: {
-                    Label("I know my numbers", systemImage: "pencil")
+
+                Section {
+                    NavigationLink {
+                        TargetHelperView { reload() }
+                    } label: {
+                        Label("Work them out for me", systemImage: "wand.and.stars")
+                    }
+                    NavigationLink {
+                        TargetsEditorView { reload() }
+                    } label: {
+                        Label("I know my numbers", systemImage: "pencil")
+                    }
+                }
+
+                if let error {
+                    Text(error).foregroundStyle(.red)
                 }
             }
-
-            if let error {
-                Text(error).foregroundStyle(.red)
-            }
+            .listRowBackground(Palette.panel)
         }
+        .themedBackground()
         .navigationTitle("Your targets")
         .safeAreaInset(edge: .bottom) {
             BottomBar { PrimaryButton(title: "Start logging", action: finish) }
@@ -137,17 +166,21 @@ private struct WelcomePoint: View {
     var text: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(.tint)
-                .frame(width: 32)
+                .font(.title3)
+                .foregroundStyle(Palette.green)
+                .frame(width: 40, height: 40)
+                .background(Palette.track, in: .rect(cornerRadius: 12))
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.headline)
-                Text(text).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.barlow(.headline))
+                Text(text).font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(16)
+        .accessibilityElement(children: .combine)
     }
 }
 

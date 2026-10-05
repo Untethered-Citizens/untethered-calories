@@ -17,45 +17,49 @@ struct APIKeyEntryView: View {
 
     var body: some View {
         Form {
-            Section {
-                SecureField("sk-ant-…", text: $key)
-                    .textContentType(.password)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .monospaced()
-                    .disabled(checking)
-                    .onChange(of: key) { failure = nil }
-            } footer: {
-                VStack(alignment: .leading, spacing: 6) {
-                    if !cleaned.isEmpty && !APIKeyStore.looksLikeAnthropicKey(cleaned) {
-                        Text("This doesn't look like an Anthropic key. They start with \"sk-ant-\".")
-                            .foregroundStyle(.orange)
-                    }
-                    Text("Create a key at platform.claude.com under Settings → API keys, then paste it here. Saving checks it with Anthropic, which costs nothing. It's stored only in this iPhone's Keychain.")
-                }
-            }
-
-            if checking {
+            Group {
                 Section {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                        Text("Checking with Anthropic…").foregroundStyle(.secondary)
+                    SecureField("sk-ant-…", text: $key)
+                        .textContentType(.password)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .monospaced()
+                        .disabled(checking)
+                        .onChange(of: key) { failure = nil }
+                } footer: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if !cleaned.isEmpty && !APIKeyStore.looksLikeAnthropicKey(cleaned) {
+                            Text("This doesn't look like an Anthropic key. They start with \"sk-ant-\".")
+                                .foregroundStyle(.orange)
+                        }
+                        Text("Create a key at platform.claude.com under Settings → API keys, then paste it here. Saving checks it with Anthropic, which costs nothing. It's stored only in this iPhone's Keychain.")
                     }
                 }
-            }
 
-            if let failure {
-                Section {
-                    Text(failure.userMessage).foregroundStyle(.red)
-                    if failure != .invalidKey {
-                        Button("Save without checking") { store(models: nil) }
+                if checking {
+                    Section {
+                        HStack(spacing: 10) {
+                            ProgressView()
+                            Text("Checking with Anthropic…").foregroundStyle(.secondary)
+                        }
                     }
                 }
+
+                if let failure {
+                    Section {
+                        Text(failure.userMessage).foregroundStyle(.red)
+                        if failure != .invalidKey {
+                            Button("Save without checking") { store(models: nil) }
+                        }
+                    }
+                }
+                if let saveError {
+                    Text(saveError).foregroundStyle(.red)
+                }
             }
-            if let saveError {
-                Text(saveError).foregroundStyle(.red)
-            }
+            .listRowBackground(Palette.panel)
         }
+        .themedBackground()
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

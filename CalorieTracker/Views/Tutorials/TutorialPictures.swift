@@ -41,11 +41,11 @@ private struct DeficitPicture: View {
                         .strokeBorder(Palette.plum, style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
                         .frame(width: 64, height: 140)
                         .overlay(alignment: .top) {
-                            Text("deficit").font(.caption.bold()).foregroundStyle(Palette.plum).padding(.top, 6)
+                            Text("deficit").font(.barlow(.caption, weight: .bold)).foregroundStyle(Palette.plum).padding(.top, 6)
                         }
                     RoundedRectangle(cornerRadius: 6).fill(Palette.green).frame(width: 64, height: 104)
                 }
-                Text("Eaten").font(.footnote).foregroundStyle(Palette.muted)
+                Text("Eaten").font(.barlow(.footnote)).foregroundStyle(Palette.muted)
             }
         }
     }
@@ -53,7 +53,7 @@ private struct DeficitPicture: View {
     private func bar(_ name: String, height: CGFloat, _ color: () -> Color) -> some View {
         VStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 6).fill(color()).frame(width: 64, height: height)
-            Text(name).font(.footnote).foregroundStyle(Palette.muted)
+            Text(name).font(.barlow(.footnote)).foregroundStyle(Palette.muted)
         }
     }
 }
@@ -71,7 +71,7 @@ private struct WeekOfDeficitPicture: View {
                             .foregroundStyle(Palette.panel)
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .background(Palette.green, in: RoundedRectangle(cornerRadius: 6))
-                        Text(day).font(.caption2).foregroundStyle(Palette.muted)
+                        Text(day).font(.barlow(.caption2)).foregroundStyle(Palette.muted)
                     }
                 }
             }
@@ -99,7 +99,7 @@ private struct LogExamplePicture: View {
                     .font(.number(40, weight: .bold, relativeTo: nil))
                     .foregroundStyle(Palette.ink)
                     .contentTransition(.numericText(countsDown: true))
-                Text("calories left today").font(.footnote).foregroundStyle(Palette.muted)
+                Text("calories left today").font(.barlow(.footnote)).foregroundStyle(Palette.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Text("2 eggs and toast")
@@ -108,7 +108,7 @@ private struct LogExamplePicture: View {
                 .background(Palette.green, in: RoundedRectangle(cornerRadius: 14))
                 .frame(maxWidth: .infinity, alignment: .trailing)
             Text("Logged Breakfast: \(meal) cal")
-                .font(.subheadline)
+                .font(.barlow(.subheadline))
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 .foregroundStyle(Palette.ink)
                 .background(Palette.track, in: RoundedRectangle(cornerRadius: 14))
@@ -127,7 +127,7 @@ private struct LogExamplePicture: View {
 private struct SourcesPicture: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("This week").font(.headline).foregroundStyle(Palette.ink)
+            Text("This week").font(.barlow(.headline)).foregroundStyle(Palette.ink)
             GeometryReader { geometry in
                 HStack(spacing: 2) {
                     Rectangle().fill(SourceFill(source: .label)).frame(width: geometry.size.width * 0.70)
@@ -139,7 +139,7 @@ private struct SourcesPicture: View {
             .frame(height: 34)
             SourceLegend()
             Text("30% of calories this week were estimates.")
-                .font(.footnote)
+                .font(.barlow(.footnote))
                 .foregroundStyle(Palette.muted)
         }
     }
@@ -179,7 +179,7 @@ private struct WeightTrendPicture: View {
                 legend(Circle().fill(Palette.muted).frame(width: 8, height: 8), "Daily weigh-ins")
                 legend(Capsule().fill(Palette.green).frame(width: 18, height: 4), "7-day average")
             }
-            .font(.footnote)
+            .font(.barlow(.footnote))
             .foregroundStyle(Palette.muted)
         }
     }
@@ -195,14 +195,14 @@ private struct DirectPicture: View {
     var body: some View {
         HStack(spacing: 10) {
             Symbol("iphone", size: 48)
-            Image(systemName: "arrow.right").font(.title2).foregroundStyle(Palette.muted)
+            Image(systemName: "arrow.right").font(.barlow(.title2)).foregroundStyle(Palette.muted)
             Image(systemName: "server.rack")
                 .font(.system(size: 34))
                 .foregroundStyle(Palette.muted.opacity(0.6))
                 .overlay { Image(systemName: "xmark").font(.system(size: 44, weight: .light)).foregroundStyle(Palette.plum) }
-            Image(systemName: "arrow.right").font(.title2).foregroundStyle(Palette.muted)
+            Image(systemName: "arrow.right").font(.barlow(.title2)).foregroundStyle(Palette.muted)
             Text("Anthropic")
-                .font(.headline)
+                .font(.barlow(.headline))
                 .foregroundStyle(Palette.ink)
                 .padding(.horizontal, 10).padding(.vertical, 8)
                 .background(Palette.track, in: RoundedRectangle(cornerRadius: 10))
@@ -215,7 +215,7 @@ private struct DirectPicture: View {
 private struct CostPicture: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Usage and cost").font(.headline).foregroundStyle(Palette.ink)
+            Text("Usage and cost").font(.barlow(.headline)).foregroundStyle(Palette.ink)
             row("This month", "84 messages")
             row("Estimated cost", "about $0.70")
         }
@@ -242,7 +242,7 @@ private struct BillingPicture: View {
     private func labelled(_ symbol: String, _ text: String) -> some View {
         VStack(spacing: 8) {
             Symbol(symbol, size: 52)
-            Text(text).font(.footnote).foregroundStyle(Palette.muted)
+            Text(text).font(.barlow(.footnote)).foregroundStyle(Palette.muted)
         }
     }
 }
@@ -255,7 +255,7 @@ private struct CreateKeyPicture: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Create key").font(.headline).foregroundStyle(Palette.ink)
+            Text("Create key").font(.barlow(.headline)).foregroundStyle(Palette.ink)
             field("Name", "\(appName) iPhone")
             field("Expires", "Never")
             HStack {
@@ -266,7 +266,7 @@ private struct CreateKeyPicture: View {
             .padding(10)
             .background(Palette.track, in: RoundedRectangle(cornerRadius: 8))
         }
-        .font(.subheadline)
+        .font(.barlow(.subheadline))
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 

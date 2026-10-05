@@ -29,18 +29,22 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                keySection
-                modelSection
-                targetsSection
-                usualMealsSection
-                healthSection
-                dataSection
-                unitsSection
-                tutorialsSection
-                #if DEBUG && targetEnvironment(simulator)
-                sampleSection
-                #endif
+                Group {
+                    keySection
+                    modelSection
+                    targetsSection
+                    usualMealsSection
+                    healthSection
+                    dataSection
+                    unitsSection
+                    tutorialsSection
+                    #if DEBUG && targetEnvironment(simulator)
+                    sampleSection
+                    #endif
+                }
+                .listRowBackground(Palette.panel)
             }
+            .themedBackground()
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -76,7 +80,7 @@ struct SettingsView: View {
                 }
             }
             if let keyError {
-                Text(keyError).foregroundStyle(.red).font(.footnote)
+                Text(keyError).foregroundStyle(.red).font(.barlow(.footnote))
             }
         } header: {
             Text("Anthropic API key")
@@ -119,7 +123,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(targets.calories.formatted()) calories")
                     Text("Protein \(targets.protein) g · Carbs \(targets.carbs) g · Fat \(targets.fat) g")
-                        .font(.footnote)
+                        .font(.barlow(.footnote))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -176,7 +180,7 @@ struct SettingsView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(tutorial.title)
-                        Text(tutorial.subtitle).font(.footnote).foregroundStyle(.secondary)
+                        Text(tutorial.subtitle).font(.barlow(.footnote)).foregroundStyle(.secondary)
                     }
                 }
             }

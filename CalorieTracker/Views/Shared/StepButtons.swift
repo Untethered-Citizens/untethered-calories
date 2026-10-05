@@ -7,9 +7,12 @@ struct PrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title).bold().frame(maxWidth: .infinity).padding(.vertical, 6)
+            Text(title).font(.barlow(.headline)).frame(maxWidth: .infinity).padding(.vertical, 8)
         }
         .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(Palette.green)
+        .foregroundStyle(Palette.onGreen)
         .padding(.horizontal, 24)
         .padding(.vertical, 8)
     }
@@ -23,7 +26,7 @@ struct BottomBar<Content: View>: View {
     var body: some View {
         VStack(spacing: 4) { content }
             .frame(maxWidth: .infinity)
-            .background(.bar)
+            .background(Palette.background)
     }
 }
 
@@ -35,7 +38,7 @@ struct NumberedStep: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text("\(number)")
-                .font(.subheadline.bold())
+                .font(.barlow(.subheadline, weight: .bold))
                 .frame(width: 24, height: 24)
                 .background(.tint.opacity(0.15), in: Circle())
                 .accessibilityHidden(true)

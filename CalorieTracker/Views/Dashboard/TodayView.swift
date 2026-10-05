@@ -47,7 +47,7 @@ private struct TodayContent: View {
             Group {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(LogText().dayName(today, template: "EEEE MMM d"))
-                        .font(.subheadline.weight(.semibold))
+                        .font(.barlow(.subheadline, weight: .semibold))
                         .foregroundStyle(Palette.muted)
                     HeroNumber(value: abs(remaining.calories).formatted(),
                                unit: remaining.isOverCalories ? "calories\nover target" : "calories\nleft today",

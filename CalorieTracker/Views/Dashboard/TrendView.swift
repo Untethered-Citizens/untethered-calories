@@ -83,7 +83,7 @@ struct TrendView: View {
         let domain = start.date(in: timeZone).addingTimeInterval(-43_200)...today.date(in: timeZone).addingTimeInterval(43_200)
 
         Text("Last \(days.count) days")
-            .font(.subheadline.weight(.semibold))
+            .font(.barlow(.subheadline, weight: .semibold))
             .foregroundStyle(Palette.muted)
 
         SectionHeading(title: "Calories")
@@ -156,7 +156,7 @@ struct TrendView: View {
             balancePanel(balance)
         } else {
             Text("Not enough overlap yet between logged days and a steady weight average to compare them.")
-                .font(.subheadline).foregroundStyle(Palette.muted)
+                .font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
         }
     }
 
@@ -169,7 +169,7 @@ struct TrendView: View {
                 Text(number.formatted(.number.precision(.fractionLength(0))))
             }
         }
-        .font(.caption2)
+        .font(.barlow(.caption2))
         .foregroundStyle(Palette.muted)
         .frame(width: axisWidth, alignment: .trailing)
     }
@@ -182,10 +182,10 @@ struct TrendView: View {
         let gap = abs(balance.impliedDailyBalance).formatted()
         let side = balance.impliedDailyBalance < 0 ? "below" : "above"
         return VStack(alignment: .leading, spacing: 8) {
-            Text("What the two say together").font(.headline)
+            Text("What the two say together").font(.barlow(.headline))
             Text("From \(range), you ate about \(balance.averageIntake.formatted()) calories a day, on the \(balance.loggedDays) days you logged. Your average weight \(direction)\(balance.poundsChange == 0 ? "" : " \(change) \(unit.rawValue)"). That suggests you ate about \(gap) a day \(side) what you used, which puts your maintenance near \(balance.estimatedMaintenance.formatted()) a day.")
             Text("A rough guide only: it assumes about 3,500 calories per pound, and missed logs, estimates and water shifts all move it.")
-                .font(.footnote).foregroundStyle(Palette.muted)
+                .font(.barlow(.footnote)).foregroundStyle(Palette.muted)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

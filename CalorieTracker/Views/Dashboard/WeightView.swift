@@ -76,7 +76,7 @@ struct WeightView: View {
                     .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .padding(.vertical, 8)
                 Text(note(series))
-                    .font(.subheadline)
+                    .font(.barlow(.subheadline))
                     .foregroundStyle(Palette.muted)
                 SectionHeading(title: "Readings")
             }
