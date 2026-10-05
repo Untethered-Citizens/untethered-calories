@@ -44,7 +44,7 @@ private struct TodayContent: View {
         let eaten = NutritionTotals(entries)
         let remaining = Remaining(targets: targets, eaten: eaten)
         List {
-            Group {
+            Section {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(LogText().dayName(today, template: "EEEE MMM d"))
                         .font(.barlow(.subheadline, weight: .semibold))
@@ -53,21 +53,31 @@ private struct TodayContent: View {
                                unit: remaining.isOverCalories ? "calories\nover target" : "calories\nleft today",
                                over: remaining.isOverCalories)
                     eatenLine(eaten)
-                        .padding(.bottom, 8)
+                        .font(.barlow(.subheadline))
+                        .padding(.top, 4)
                     BudgetStrip(entries: sorted.map(\.draft), target: targets.calories)
                     SourceLegend()
                 }
-                SectionHeading(title: "Macros")
+                .openRow()
+            }
+
+            Section {
+                SectionHeading(title: "Macros", inCard: true).cardRow()
                 MacroBars(protein: Double(eaten.protein), carbs: Double(eaten.carbs),
                           fat: Double(eaten.fat), targets: targets)
-                SectionHeading(title: "Meals")
+                    .cardRow()
             }
-            .dashboardRow()
 
-            MealsSection(entries: sorted, empty: "Nothing logged yet. Tell the Log tab what you ate.",
-                         editing: $editing, deleting: $deleting)
+            Section {
+                SectionHeading(title: "Meals", inCard: true).cardRow()
+                MealsSection(entries: sorted, empty: "Nothing logged yet. Tell the Log tab what you ate.",
+                             editing: $editing, deleting: $deleting)
+            }
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(16)
+        .contentMargins(.top, 4, for: .scrollContent)
+        .environment(\.defaultMinListHeaderHeight, 0)
         .entryActions(editing: $editing, deleting: $deleting)
         .scrollContentBackground(.hidden)
         .background(Palette.background)
@@ -78,14 +88,14 @@ private struct TodayContent: View {
             if entries.isEmpty {
                 Text("Nothing logged yet today.")
             } else {
-                Text("\(Text(eaten.calories.formatted()).fontWeight(.semibold).foregroundStyle(Palette.ink)) eaten of \(Text(targets.calories.formatted()).fontWeight(.semibold).foregroundStyle(Palette.ink)) across \(entries.count) \(entries.count == 1 ? "entry" : "entries")")
+                Text("\(Text(eaten.calories.formatted()).fontWeight(.semibold).foregroundStyle(Palette.ink)) eaten of \(Text(targets.calories.formatted()).fontWeight(.semibold).foregroundStyle(Palette.ink)) cal across \(entries.count) \(entries.count == 1 ? "entry" : "entries")")
             }
         }
         .foregroundStyle(Palette.muted)
     }
 }
 
-/// A day's entries, each swipeable to edit or delete (D44). The sheets live on the list
+/// A day's entries inside a card, each swipeable to edit or delete (D44). The sheets live on the list
 /// (see `entryActions`), not on the rows.
 struct MealsSection: View {
     var entries: [MealEntry]
@@ -95,11 +105,11 @@ struct MealsSection: View {
 
     var body: some View {
         if entries.isEmpty {
-            Text(empty).foregroundStyle(Palette.muted).dashboardRow()
+            Text(empty).foregroundStyle(Palette.muted).cardRow()
         }
         ForEach(entries) { entry in
             MealRow(draft: entry.draft)
-                .dashboardRow(separator: true)
+                .cardRow(separator: true)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", systemImage: "trash", role: .destructive) { deleting = entry }
                         .tint(.red)

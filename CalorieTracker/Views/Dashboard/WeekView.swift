@@ -56,6 +56,12 @@ private struct WeekContent: View {
     private var periods: [TargetPeriod] { targetRows.map(\.period) }
     private var dayTotals: [LocalDate: NutritionTotals] { DayTotalsIndex.build(entries: entries, summaries: summaries) }
     private var firstLoggingDay: LocalDate? { (firstEntry.map(\.date) + firstSummary.map(\.date)).min() }
+    /// Photo-estimate calories per day, from meal detail. Rolled-up days only keep an
+    /// estimated total, so their photo share is drawn as plain estimate.
+    private var photoCalories: [LocalDate: Int] {
+        entries.filter { $0.source == .photoEstimate }
+            .reduce(into: [:]) { $0[$1.date, default: 0] += $1.calories }
+    }
 
     var body: some View {
         let totals = dayTotals
@@ -63,9 +69,9 @@ private struct WeekContent: View {
                               firstLoggingDay: firstLoggingDay)
         let shown = selected ?? defaultDay(stats)
         List {
-            Group {
-                pager(stats)
-                WeekChart(days: stats.days, totals: totals, today: today,
+            Section {
+                pager(stats).openRow()
+                WeekChart(days: stats.days, totals: totals, photo: photoCalories, today: today,
                           target: TargetHistory.effective(on: end, in: periods).calories,
                           targetFor: { TargetHistory.effective(on: $0, in: periods).calories },
                           selected: shown, onSelect: { selected = $0 })
@@ -73,25 +79,33 @@ private struct WeekContent: View {
                     // Seven day labels can't fit large text; the day details below scale fully,
                     // and VoiceOver reads every day's value.
                     .dynamicTypeSize(...DynamicTypeSize.large)
-                dayHeader(shown, totals[shown])
+                    .openRow()
             }
-            .dashboardRow()
 
-            dayDetail(shown, totals[shown])
+            Section {
+                dayHeader(shown, totals[shown]).cardRow()
+                dayDetail(shown, totals[shown])
+            }
 
-            Group {
-                statsRow(stats)
-                SectionHeading(title: "Average macros")
+            Section {
+                statsRow(stats).openRow()
+            }
+
+            Section {
+                SectionHeading(title: "Average macros", inCard: true).cardRow()
                 MacroBars(protein: stats.averageProtein ?? 0, carbs: stats.averageCarbs ?? 0,
                           fat: stats.averageFat ?? 0, targets: TargetHistory.effective(on: end, in: periods))
+                    .cardRow()
                 Text(stats.honestyNote())
                     .font(.barlow(.subheadline))
                     .foregroundStyle(Palette.muted)
-                    .padding(.top, 8)
+                    .cardRow()
             }
-            .dashboardRow()
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
+        .listSectionSpacing(16)
+        .contentMargins(.top, 4, for: .scrollContent)
+        .environment(\.defaultMinListHeaderHeight, 0)
         .entryActions(editing: $editing, deleting: $deleting)
         .scrollContentBackground(.hidden)
         .background(Palette.background)
@@ -112,7 +126,7 @@ private struct WeekContent: View {
                 .disabled(!canGoBack)
             Spacer()
             Text("\(text.dayName(stats.days.first!, template: "MMM d")) – \(text.dayName(stats.days.last!, template: "MMM d"))")
-                .font(.barlow(.headline))
+                .font(.condensed(24))
             Spacer()
             Button("Later week", systemImage: "chevron.right") { weeksBack -= 1 }
                 .disabled(weeksBack == 0)
@@ -127,15 +141,16 @@ private struct WeekContent: View {
 
     private func dayHeader(_ day: LocalDate, _ totals: NutritionTotals?) -> some View {
         let target = TargetHistory.effective(on: day, in: periods)
+        let over = (totals?.calories ?? 0) > target.calories && day != today
         return VStack(alignment: .leading, spacing: 4) {
-            Divider().overlay(Palette.rule).padding(.bottom, 8)
             HStack(alignment: .firstTextBaseline) {
                 Text(LogText().dayName(day))
-                    .font(.condensed(26))
+                    .font(.condensed(28))
                 Spacer()
                 if let totals, totals.entryCount > 0 {
-                    (Text(totals.calories.formatted()).font(.number(26, weight: .bold, relativeTo: .title2))
-                     + Text(" / \(target.calories.formatted())").font(.barlow(.subheadline)).foregroundStyle(Palette.muted))
+                    (Text(totals.calories.formatted()).font(.number(28, relativeTo: .title2))
+                        .foregroundStyle(over ? Palette.plum : Palette.ink)
+                     + Text(" / \(target.calories.formatted()) cal").font(.barlow(.subheadline)).foregroundStyle(Palette.muted))
                 }
             }
             .foregroundStyle(Palette.ink)
@@ -145,7 +160,7 @@ private struct WeekContent: View {
             if let totals, totals.entryCount > 0 {
                 MacroBars(protein: Double(totals.protein), carbs: Double(totals.carbs),
                           fat: Double(totals.fat), targets: target)
-                    .padding(.top, 6)
+                    .padding(.top, 8)
             }
         }
         .accessibilityElement(children: .contain)
@@ -154,7 +169,7 @@ private struct WeekContent: View {
     private func daySubline(_ day: LocalDate, _ totals: NutritionTotals?, target: Int) -> String {
         guard let totals, totals.entryCount > 0 else { return "Nothing was logged this day." }
         let diff = totals.calories - target
-        var parts = [diff > 0 ? "\(diff.formatted()) over target" : "\((-diff).formatted()) under target",
+        var parts = [diff > 0 ? "\(diff.formatted()) cal over target" : "\((-diff).formatted()) cal under target",
                      "\(totals.entryCount) \(totals.entryCount == 1 ? "entry" : "entries")",
                      "\(totals.estimatedPercent ?? 0)% estimated"]
         if day == today { parts.insert("Day in progress", at: 0) }
@@ -173,7 +188,7 @@ private struct WeekContent: View {
                 Text("Older days are kept as a summary, so their meals can't be edited.")
                     .font(.barlow(.footnote)).foregroundStyle(Palette.muted)
             }
-            .dashboardRow()
+            .cardRow()
         }
         if !detail.isEmpty || summary == nil {
             MealsSection(entries: detail, empty: "", editing: $editing, deleting: $deleting)
@@ -191,7 +206,6 @@ private struct WeekContent: View {
             statPanel(stats.estimatedPercent.map { "\($0)%" } ?? "–", "of calories estimated")
         }
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.top, 10)
     }
 
     private func statPanel(_ value: String, _ label: String) -> some View {
@@ -202,18 +216,21 @@ private struct WeekContent: View {
         .foregroundStyle(Palette.ink)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(12)
-        .background(Palette.panel, in: .rect(cornerRadius: 6))
+        .background(Palette.panel, in: .rect(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.rule))
         .accessibilityElement(children: .combine)
     }
 }
 
-/// Seven stacked bars: solid label calories under hatched estimated calories, a dashed
-/// target line, and a value above each bar (plum when over, except today).
+/// Seven stacked bars by source (Label solid, then Estimate and Photo estimate hatched), a
+/// dashed target line, and a value above each bar (plum when over, except today).
 struct WeekChart: View {
     /// Redraws when the text size changes, so scaled numbers follow it.
     @Environment(\.dynamicTypeSize) private var typeSize
     var days: [LocalDate]
     var totals: [LocalDate: NutritionTotals]
+    /// Photo-estimate calories per day, where meal detail still exists.
+    var photo: [LocalDate: Int] = [:]
     var today: LocalDate
     var target: Int
     var targetFor: (LocalDate) -> Int
@@ -239,18 +256,22 @@ struct WeekChart: View {
                             Text("no data").font(.barlow(.caption2)).foregroundStyle(Palette.muted)
                         }
                 } else {
-                    BarMark(x: .value("Day", day.iso), y: .value("Calories", label))
-                        .foregroundStyle(Palette.green)
-                        .opacity(partial ? 0.5 : 1)
-                    BarMark(x: .value("Day", day.iso), y: .value("Calories", total.estimatedCalories))
-                        .foregroundStyle(SourceFill(source: .estimate))
-                        .opacity(partial ? 0.5 : 1)
-                        .annotation(position: .top) {
-                            let over = !partial && total.calories > targetFor(day)
-                            Text(total.calories.formatted())
-                                .font(.number(14, relativeTo: nil))
-                                .foregroundStyle(over ? Palette.plum : Palette.ink)
-                        }
+                    let photoPart = min(photo[day] ?? 0, total.estimatedCalories)
+                    let segments = [(Source.label, label), (.estimate, total.estimatedCalories - photoPart),
+                                    (.photoEstimate, photoPart)].filter { $0.1 > 0 }
+                    ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
+                        BarMark(x: .value("Day", day.iso), y: .value("Calories", segment.1))
+                            .foregroundStyle(SourceFill(source: segment.0))
+                            .opacity(partial ? 0.5 : 1)
+                            .annotation(position: .top) {
+                                if index == segments.count - 1 {
+                                    let over = !partial && total.calories > targetFor(day)
+                                    Text(total.calories.formatted())
+                                        .font(.number(14, relativeTo: nil))
+                                        .foregroundStyle(over ? Palette.plum : Palette.ink)
+                                }
+                            }
+                    }
                 }
             }
             RuleMark(y: .value("Target", target))

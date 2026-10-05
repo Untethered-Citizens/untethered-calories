@@ -19,12 +19,12 @@ struct HeroNumber: View {
     var value: String
     var unit: String
     var over = false
-    var size: CGFloat = 104
+    var size: CGFloat = 96
 
     var body: some View {
         HStack(alignment: .lastTextBaseline, spacing: 10) {
             Text(value)
-                .font(.number(size, weight: .bold, relativeTo: .largeTitle))
+                .font(.number(size, relativeTo: .largeTitle))
                 .foregroundStyle(over ? Palette.plum : Palette.ink)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
@@ -53,7 +53,7 @@ struct BudgetStrip: View {
         GeometryReader { geometry in
             let width = geometry.size.width
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4).fill(Palette.track)
+                RoundedRectangle(cornerRadius: 5).fill(Palette.track)
                 HStack(spacing: 0) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
                         Rectangle()
@@ -64,16 +64,16 @@ struct BudgetStrip: View {
                 }
                 .frame(width: width, alignment: .leading)
                 .scaleEffect(x: shown ? 1 : 0, anchor: .leading)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: 5))
                 if total > target {
                     let x = CGFloat(target) / CGFloat(scale) * width
-                    Rectangle().fill(Palette.ink).frame(width: 2, height: 46).offset(x: x - 1)
+                    Rectangle().fill(Palette.ink).frame(width: 2, height: 30).offset(x: x - 1)
                     Text("target").font(.barlow(.caption)).foregroundStyle(Palette.muted)
                         .fixedSize().position(x: x, y: -16)
                 }
             }
         }
-        .frame(height: 34)
+        .frame(height: 18)
         .padding(.top, total > target ? 22 : 0)
         .onAppear {
             if reduceMotion { shown = true } else { withAnimation(.easeOut(duration: 0.6)) { shown = true } }
@@ -93,7 +93,7 @@ struct SourceLegend: View {
         layout {
             ForEach(Source.allCases, id: \.self) { source in
                 HStack(spacing: 6) {
-                    RoundedRectangle(cornerRadius: 2).fill(SourceFill(source: source)).frame(width: 14, height: 10)
+                    SourceSwatch(source: source, size: 12, radius: 3)
                     Text(source == .photoEstimate ? "Photo estimate" : source.rawValue)
                 }
             }
@@ -108,11 +108,13 @@ struct SectionHeading: View {
     /// Redraws when the text size changes, so scaled numbers follow it.
     @Environment(\.dynamicTypeSize) private var typeSize
     var title: String
+    /// Inside a card the card's padding is enough; on the open background it needs room above.
+    var inCard = false
     var body: some View {
         Text(title)
-            .font(.condensed(26))
+            .font(.condensed(inCard ? 24 : 26))
             .foregroundStyle(Palette.ink)
-            .padding(.top, 12)
+            .padding(.top, inCard ? 0 : 12)
             .accessibilityAddTraits(.isHeader)
     }
 }
@@ -129,7 +131,7 @@ struct MacroBars: View {
     @ScaledMetric(relativeTo: .body) private var nameWidth = 64.0
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 10) {
             row("Protein", protein, targets.protein)
             row("Carbs", carbs, targets.carbs)
             row("Fat", fat, targets.fat)
@@ -147,7 +149,7 @@ struct MacroBars: View {
                     .frame(width: geometry.size.width * fraction)
             }
         }
-        .frame(height: 10)
+        .frame(height: 8)
         let amount = Text("\(rounded)").font(.number(20)) + Text(" / \(target) g").font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
         return Group {
             if typeSize.isAccessibilitySize {
@@ -174,16 +176,34 @@ struct MacroBars: View {
     }
 }
 
+/// A small square of a source's fill, for legends and tags.
+struct SourceSwatch: View {
+    var source: Source
+    var size: CGFloat
+    var radius: CGFloat
+
+    var body: some View {
+        Rectangle().fill(SourceFill(source: source))
+            .frame(width: size, height: size)
+            .clipShape(.rect(cornerRadius: radius))
+    }
+}
+
+/// A source tag: a swatch of the source's fill and its name, so it reads without colour.
 struct SourceTag: View {
     var source: Source
     var body: some View {
-        Text(source.shortName)
-            .font(.barlow(.caption, weight: .medium))
-            .lineLimit(1)
-            .fixedSize()
-            .foregroundStyle(source.tagColor)
-            .padding(.horizontal, 7).padding(.vertical, 1)
-            .overlay(Capsule().strokeBorder(source.tagColor))
+        HStack(spacing: 5) {
+            SourceSwatch(source: source, size: 10, radius: 2)
+                .accessibilityHidden(true)
+            Text(source.shortName)
+        }
+        .font(.barlow(.caption, weight: .semibold))
+        .lineLimit(1)
+        .fixedSize()
+        .foregroundStyle(source.tagColor)
+        .padding(.horizontal, 8).padding(.vertical, 2)
+        .overlay(Capsule().strokeBorder(Palette.rule))
     }
 }
 
@@ -212,12 +232,14 @@ struct MealRow: View {
                         }
                     }
                 }
-                Text(draft.description).font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
-                Text("\(draft.protein)p · \(draft.carbs)c · \(draft.fat)f")
-                    .font(.barlow(.footnote)).monospacedDigit().foregroundStyle(Palette.muted)
+                Text(draft.description).font(.barlow(.subheadline))
+                Text("\(draft.protein) g P · \(draft.carbs) g C · \(draft.fat) g F")
+                    .font(.barlow(.footnote, weight: .medium)).monospacedDigit().foregroundStyle(Palette.muted)
             }
             if !big { Spacer(minLength: 0) }
-            Text(draft.calories.formatted()).font(.number(24, relativeTo: .title2))
+            (Text(draft.calories.formatted()).font(.number(22, relativeTo: .title2))
+             + Text(" cal").font(.barlow(.footnote, weight: .medium)).foregroundStyle(Palette.muted))
+                .fixedSize()
         }
         .foregroundStyle(Palette.ink)
         .padding(.vertical, 4)
@@ -226,6 +248,23 @@ struct MealRow: View {
 }
 
 extension View {
+    /// A row inside a dashboard card (an inset-grouped section): the panel colour, with
+    /// the card's padding. Separators only between meals.
+    func cardRow(separator: Bool = false) -> some View {
+        listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+            .listRowBackground(Palette.panel)
+            .listRowSeparator(separator ? .visible : .hidden)
+            .listRowSeparatorTint(Palette.rule)
+    }
+
+    /// Content that sits on the screen background between cards, aligned with their edges.
+    /// The vertical inset keeps it clear of the section's rounded corners, which clip.
+    func openRow() -> some View {
+        listRowInsets(EdgeInsets(top: 12, leading: 4, bottom: 12, trailing: 4))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+
     /// A dashboard list row: no default inset background or separator.
     func dashboardRow(separator: Bool = false) -> some View {
         listRowInsets(EdgeInsets(top: 6, leading: 18, bottom: 6, trailing: 18))

@@ -29,9 +29,20 @@ struct LogView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 RemainingHeader(targets: targets, eaten: eaten)
-                Divider()
+                Divider().overlay(Palette.rule)
                 if let conversation {
-                    thread(conversation)
+                    if conversation.items.isEmpty && !conversation.isSending {
+                        // Centred in the space above the composer (the thread itself sits at the bottom).
+                        ScrollView { emptyState.padding() }
+                            .defaultScrollAnchor(.center)
+                            .scrollBounceBehavior(.basedOnSize)
+                            .scrollDismissesKeyboard(.immediately)
+                            // Short content doesn't scroll, so a tap outside the examples closes the keyboard.
+                            .contentShape(Rectangle())
+                            .onTapGesture { composerFocused = false }
+                    } else {
+                        thread(conversation)
+                    }
                     if let failure = conversation.failure { failureBanner(failure, conversation) }
                     composer(conversation)
                 }
@@ -75,7 +86,6 @@ struct LogView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
-                    if conversation.items.isEmpty { emptyState }
                     ForEach(conversation.items) { item in
                         row(item, conversation).id(item.id)
                     }
@@ -115,31 +125,26 @@ struct LogView: View {
                 }
                 if !text.isEmpty {
                     Text(text)
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(Color.accentColor, in: .rect(cornerRadius: 16))
-                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .background(Palette.green, in: UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 18,
+                                                                             bottomTrailingRadius: 6, topTrailingRadius: 18))
+                        .foregroundStyle(Palette.onGreen)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.leading, 40)
         case .assistant(let text):
             Text(text)
-                .padding(.horizontal, 12).padding(.vertical, 8)
-                .background(.background.secondary, in: .rect(cornerRadius: 16))
+                .claudeBubble()
                 .padding(.trailing, 40)
         case .logged(let line):
-            Label(line, systemImage: "checkmark.circle.fill")
-                .font(.barlow(.subheadline))
-                .foregroundStyle(.primary)
-                .symbolRenderingMode(.multicolor)
-                .padding(.trailing, 24)
+            SavedLine(text: line)
         case .local(let answer):
             VStack(alignment: .leading, spacing: 4) {
                 Text(answer)
-                Text("Worked out on your iPhone").font(.barlow(.caption2)).foregroundStyle(.secondary)
+                Text("Worked out on your iPhone").font(.barlow(.caption2)).foregroundStyle(Palette.muted)
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(.background.secondary, in: .rect(cornerRadius: 16))
+            .claudeBubble()
             .padding(.trailing, 40)
         case .proposal(let id):
             if let proposal = conversation.proposals[id] {
@@ -149,13 +154,13 @@ struct LogView: View {
                              onDismiss: { conversation.dismiss(id) })
             }
         case .notice(let text):
-            Text(text).font(.barlow(.footnote)).foregroundStyle(.secondary)
+            Text(text).font(.barlow(.footnote)).foregroundStyle(Palette.muted)
                 .frame(maxWidth: .infinity)
         case .newConversation:
             HStack {
                 VStack { Divider() }
                 Text("New chat · Claude won't see the messages above")
-                    .font(.barlow(.caption)).foregroundStyle(.secondary)
+                    .font(.barlow(.caption)).foregroundStyle(Palette.muted)
                     .multilineTextAlignment(.center)
                     // The lines either side shrink first, so the text stays on one line when it fits.
                     .layoutPriority(1)
@@ -170,19 +175,56 @@ struct LogView: View {
         AccessibilityNotification.Announcement("New chat started. Claude won't see the messages above.").post()
     }
 
+    /// The mark, the prompt, and three examples. Tapping a typed example puts it in the
+    /// composer to edit or send (with a trailing space, so autocorrect leaves its last word
+    /// alone); the photo one opens the camera (or the library).
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 18) {
+            Image("BrandMark")
+                .resizable()
+                .frame(width: 56, height: 56)
+                .accessibilityHidden(true)
             Text("Tell me what you ate, or send a photo.")
-                .font(.barlow(.headline))
-            Text("“300 cal protein bar for a snack”\n“Chicken burrito and chips for lunch”\nA photo of a nutrition label or your plate")
-                .foregroundStyle(.secondary)
+                .font(.barlow(.title3, weight: .semibold))
+                .multilineTextAlignment(.center)
+            VStack(spacing: 8) {
+                example("“300 cal protein bar for a snack”", icon: "text.bubble") {
+                    draft = "300 cal protein bar for a snack "; composerFocused = true
+                }
+                example("“Chicken burrito and chips for lunch”", icon: "text.bubble") {
+                    draft = "Chicken burrito and chips for lunch "; composerFocused = true
+                }
+                example("A photo of a nutrition label or your plate", icon: "camera", tint: Palette.ochreInk) {
+                    if CameraPicker.isAvailable { showingCamera = true } else { showingLibrary = true }
+                }
+            }
             if !hasKey {
                 Text("Add your Anthropic API key in Settings to start. You can already ask “calories left?”.")
-                    .font(.barlow(.footnote)).foregroundStyle(.orange)
-                    .padding(.top, 4)
+                    .font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
+                    .multilineTextAlignment(.center)
             }
         }
+        .foregroundStyle(Palette.ink)
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
+    }
+
+    private func example(_ text: String, icon: String, tint: Color = Palette.green,
+                         action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon).foregroundStyle(tint).accessibilityHidden(true)
+                Text(text).multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+            }
+            .font(.barlow(.callout))
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            .frame(minHeight: 48)
+            .background(Palette.panel, in: .rect(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.rule))
+        }
+        .buttonStyle(.plain)
     }
 
     private func failureBanner(_ failure: LogConversation.Failure, _ conversation: LogConversation) -> some View {
@@ -225,9 +267,12 @@ struct LogView: View {
                     }
                     Button("Choose from library", systemImage: "photo.on.rectangle") { showingLibrary = true }
                 } label: {
-                    Image(systemName: "camera.fill")
+                    Image(systemName: "camera")
                         .font(.barlow(.title3))
-                        .frame(minWidth: 36, minHeight: 36)
+                        .foregroundStyle(Palette.green)
+                        .frame(width: 44, height: 44)
+                        .background(Palette.panel, in: Circle())
+                        .overlay(Circle().strokeBorder(Palette.rule))
                 }
                 .disabled(!conversation.acceptsPhotos || photos.count >= PhotoPrep.maxPhotosPerMessage)
                 .accessibilityLabel("Add photo")
@@ -235,22 +280,25 @@ struct LogView: View {
                 TextField("What did you eat?", text: $draft, axis: .vertical)
                     .lineLimit(1...5)
                     .focused($composerFocused)
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(.background.secondary, in: .rect(cornerRadius: 18))
+                    .padding(.horizontal, 16).padding(.vertical, 11)
+                    .background(Palette.panel, in: .rect(cornerRadius: 22))
+                    .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Palette.rule))
 
                 Button {
                     send(conversation)
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.barlow(.largeTitle))
+                        .font(.system(size: 40))
+                        .frame(width: 44, height: 44)
                 }
+                .tint(Palette.green)
                 .disabled(conversation.isSending || (draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photos.isEmpty))
                 .accessibilityLabel("Send")
             }
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(.bar)
+        .background(Palette.background)
     }
 
     private func send(_ conversation: LogConversation) {
@@ -335,27 +383,25 @@ struct RemainingHeader: View {
                     .monospacedDigit()
                     .contentTransition(.numericText())
                 Text(remaining.isOverCalories ? "calories over today" : "calories left today")
-                    .foregroundStyle(remaining.isOverCalories ? .orange : .secondary)
+                    .foregroundStyle(remaining.isOverCalories ? Palette.plum : Palette.muted)
                 Spacer(minLength: 0)
             }
+            progressBar
             Text("\(eaten.calories.formatted()) of \(targets.calories.formatted()) calories eaten")
-                .font(.barlow(.subheadline)).monospacedDigit().foregroundStyle(.secondary)
+                .font(.barlow(.footnote)).monospacedDigit().foregroundStyle(Palette.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            ProgressView(value: Double(min(eaten.calories, targets.calories)), total: Double(max(targets.calories, 1)))
-                .tint(remaining.isOverCalories ? .orange : .accentColor)
             let macros = typeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
-                : AnyLayout(HStackLayout())
+                : AnyLayout(HStackLayout(spacing: 8))
             macros {
                 macro("Protein", remaining.protein)
-                if !typeSize.isAccessibilitySize { Spacer() }
                 macro("Carbs", remaining.carbs)
-                if !typeSize.isAccessibilitySize { Spacer() }
                 macro("Fat", remaining.fat)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .font(.barlow(.footnote))
+            .padding(.top, 2)
         }
+        .foregroundStyle(Palette.ink)
         .padding(.horizontal)
         .padding(.vertical, 10)
         .animation(reduceMotion ? nil : .default, value: eaten)
@@ -364,12 +410,40 @@ struct RemainingHeader: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// Eaten against the target; plum once over.
+    private var progressBar: some View {
+        GeometryReader { geometry in
+            let fraction = min(Double(eaten.calories) / Double(max(targets.calories, 1)), 1)
+            ZStack(alignment: .leading) {
+                Capsule().fill(Palette.track)
+                Capsule().fill(remaining.isOverCalories ? Palette.plum : Palette.green)
+                    .frame(width: geometry.size.width * fraction)
+            }
+        }
+        .frame(height: 8)
+    }
+
+    /// One macro's grams left, as a small panel (a plain line at the largest text sizes).
+    @ViewBuilder
     private func macro(_ name: String, _ left: Int) -> some View {
-        HStack(spacing: 4) {
-            Text(name).foregroundStyle(.secondary)
-            Text(left >= 0 ? "\(left) g left" : "\(-left) g over")
-                .monospacedDigit()
-                .foregroundStyle(left >= 0 ? Color.primary : Color.orange)
+        let value = Text(left >= 0 ? "\(left) g left" : "\(-left) g over")
+            .monospacedDigit()
+            .foregroundStyle(left >= 0 ? Palette.ink : Palette.plum)
+        if typeSize.isAccessibilitySize {
+            HStack(spacing: 4) {
+                Text(name).foregroundStyle(Palette.muted)
+                value
+            }
+            .font(.barlow(.footnote))
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(name).font(.barlow(.caption)).foregroundStyle(Palette.muted)
+                value.font(.number(19, relativeTo: .body))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(Palette.panel, in: .rect(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.rule))
         }
     }
 }
@@ -399,5 +473,38 @@ struct PhotoStrip: View {
                 }
             }
         }
+    }
+}
+
+/// The one-line confirmation once something is saved.
+struct SavedLine: View {
+    var text: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "checkmark.circle.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(Palette.onGreen, Palette.green)
+                .accessibilityHidden(true)
+            Text(text)
+        }
+        .font(.barlow(.subheadline))
+        .foregroundStyle(Palette.ink)
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Palette.panel, in: .rect(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Palette.rule))
+    }
+}
+
+extension View {
+    /// Claude's side of the conversation: a panel bubble with its tail at the bottom left.
+    func claudeBubble() -> some View {
+        let shape = UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 6,
+                                           bottomTrailingRadius: 18, topTrailingRadius: 18)
+        return padding(.horizontal, 14).padding(.vertical, 9)
+            .foregroundStyle(Palette.ink)
+            .background(Palette.panel, in: shape)
+            .overlay(shape.strokeBorder(Palette.rule))
     }
 }

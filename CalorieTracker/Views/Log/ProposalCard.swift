@@ -10,29 +10,64 @@ struct ProposalCard: View {
     var onDismiss: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            header
-            details
-            footer
+        switch proposal.status {
+        case .pending:
+            card
+        case .done(let line):
+            // Once saved, the card collapses to one line.
+            SavedLine(text: line)
+        case .dismissed:
+            HStack(spacing: 10) {
+                Image(systemName: "xmark.circle").accessibilityHidden(true)
+                Text("Dismissed. Nothing was saved.")
+            }
+            .font(.barlow(.subheadline))
+            .foregroundStyle(Palette.muted)
+            .padding(.horizontal, 14).padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Palette.rule, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
         }
-        .padding(14)
+    }
+
+    private var card: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let source {
+                // The source's own fill across the top, so an estimate never looks like a label.
+                Rectangle().fill(SourceFill(source: source)).frame(height: 6)
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                header
+                details
+                footer
+            }
+            .padding(.leading, 16).padding(.trailing, 6).padding(.bottom, 14)
+            .padding(.top, 4)
+        }
+        .foregroundStyle(Palette.ink)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.separator))
-        .opacity(proposal.status == .dismissed ? 0.55 : 1)
+        .background(Palette.panel)
+        .clipShape(.rect(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Palette.rule))
     }
 
     private var header: some View {
         HStack {
             Label(title, systemImage: icon)
                 .font(.barlow(.subheadline, weight: .semibold))
+                .foregroundStyle(source == .photoEstimate ? Palette.ochreInk : Palette.green)
             Spacer()
-            if proposal.status == .pending {
-                Button("Dismiss", systemImage: "xmark", action: onDismiss)
-                    .labelStyle(.iconOnly)
-                    .foregroundStyle(.secondary)
-            }
+            Button("Dismiss", systemImage: "xmark", action: onDismiss)
+                .labelStyle(.iconOnly)
+                .foregroundStyle(Palette.muted)
+                .frame(width: 44, height: 44)
         }
+    }
+
+    /// The source an estimate card is drawn in; nil for targets and usual meals.
+    private var source: Source? {
+        guard case .estimate(let entries) = proposal.kind else { return nil }
+        return entries.contains { $0.draft.source == .photoEstimate } ? .photoEstimate : .estimate
     }
 
     @ViewBuilder
@@ -51,41 +86,37 @@ struct ProposalCard: View {
             Text("\(targets.calories.formatted()) cal · \(targets.protein)p / \(targets.carbs)c / \(targets.fat)f")
                 .monospacedDigit()
             Text(from == today ? "From today" : "From \(LogText().dayName(from))")
-                .font(.barlow(.footnote)).foregroundStyle(.secondary)
-            if !goalNote.isEmpty { Text(goalNote).font(.barlow(.footnote)).foregroundStyle(.secondary) }
+                .font(.barlow(.footnote)).foregroundStyle(Palette.muted)
+            if !goalNote.isEmpty { Text(goalNote).font(.barlow(.footnote)).foregroundStyle(Palette.muted) }
         case .usualMeal(let input, let meal, let source, let replaces):
             Text("\(meal.rawValue) · \(input.description)")
             Text("\(input.calories.formatted()) cal · \(input.protein)p / \(input.carbs)c / \(input.fat)f · \(source.rawValue)")
-                .font(.barlow(.footnote)).monospacedDigit().foregroundStyle(.secondary)
+                .font(.barlow(.footnote)).monospacedDigit().foregroundStyle(Palette.muted)
             if replaces {
-                Text("Replaces the one saved with this name.").font(.barlow(.footnote)).foregroundStyle(.orange)
+                Text("Replaces the one saved with this name.").font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
             }
         }
     }
 
-    @ViewBuilder
     private var footer: some View {
-        switch proposal.status {
-        case .pending:
-            HStack {
-                Button(acceptTitle, action: onAccept)
-                    .buttonStyle(.borderedProminent)
-                if case .estimate = proposal.kind {
-                    Button("Edit", action: onEdit)
-                        .buttonStyle(.bordered)
+        HStack(spacing: 10) {
+            Button(action: onAccept) {
+                Text(acceptTitle).font(.barlow(.headline)).frame(maxWidth: .infinity, minHeight: 32)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Palette.green)
+            .foregroundStyle(Palette.onGreen)
+            if case .estimate = proposal.kind {
+                Button(action: onEdit) {
+                    Text("Edit").font(.barlow(.headline)).frame(maxWidth: .infinity, minHeight: 32)
                 }
+                .buttonStyle(.bordered)
+                .tint(Palette.green)
             }
-        case .done(let line):
-            Label {
-                Text(line)
-            } icon: {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            }
-            .font(.barlow(.footnote))
-        case .dismissed:
-            Text("Dismissed. Nothing was saved.")
-                .font(.barlow(.footnote)).foregroundStyle(.secondary)
         }
+        .buttonBorderShape(.capsule)
+        .padding(.top, 6)
+        .padding(.trailing, 10)
     }
 
     private var title: String {
@@ -99,7 +130,7 @@ struct ProposalCard: View {
 
     private var icon: String {
         switch proposal.kind {
-        case .estimate: "sparkles"
+        case .estimate: source == .photoEstimate ? "camera" : "text.bubble"
         case .targets: "target"
         case .usualMeal: "star"
         }
@@ -123,13 +154,14 @@ struct EntryLine: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(showDate ? "\(draft.meal.rawValue), \(LogText().dayName(draft.date)) · \(draft.description)"
                           : "\(draft.meal.rawValue) · \(draft.description)")
+                .font(.barlow(.headline))
             HStack(spacing: 4) {
-                Text("\(draft.calories.formatted()) cal · \(draft.protein)p / \(draft.carbs)c / \(draft.fat)f")
+                Text("\(draft.calories.formatted()) cal · \(draft.protein)p / \(draft.carbs)c / \(draft.fat)f · \(draft.source == .photoEstimate ? "Photo estimate" : draft.source.rawValue)")
                 if draft.containsAlcohol { Image(systemName: "wineglass").accessibilityLabel("Contains alcohol") }
             }
             .font(.barlow(.footnote))
             .monospacedDigit()
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Palette.muted)
         }
     }
 }

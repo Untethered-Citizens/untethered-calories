@@ -9,14 +9,13 @@ struct WelcomeMoment: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
 
-    /// Matches the launch screen's mark, so the hand-off is seamless. (`LaunchMark` holds the same
-    /// colours pre-converted to Display P3, because the launch screen reads asset colours as P3.)
+    /// Matches the launch screen's mark, so the hand-off is seamless.
     private let launchMarkSize: CGFloat = 150
 
     var body: some View {
         ZStack {
             Palette.brand.ignoresSafeArea()
-            Image("WelcomeMark")
+            Image("LaunchMark")
                 .resizable()
                 .frame(width: launchMarkSize, height: launchMarkSize)
                 .scaleEffect(revealed && !reduceMotion ? 0.85 : 1)
