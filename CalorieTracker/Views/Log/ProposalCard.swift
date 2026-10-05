@@ -179,10 +179,15 @@ struct EntryEditView: View {
     @State private var drafts: [EntryDraft] = []
     /// Several items sharing one meal get a single picker that sets them all.
     @State private var oneMeal = false
-    @State private var error: String?
+    /// Why the last save was refused. Shown as an alert, because an inline message can sit
+    /// below the fold on a long form and make the save button look dead (issue #3).
+    @State private var problem: String?
+    /// The first item a refused save complained about, so the form can scroll to it.
+    @State private var problemIndex: Int?
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scroller in
             Form {
                 Group {
                     if oneMeal {
@@ -205,17 +210,28 @@ struct EntryEditView: View {
                             NumberRow(label: "Carbs", value: $drafts[index].carbs, unit: "g", maxDigits: 4)
                             NumberRow(label: "Fat", value: $drafts[index].fat, unit: "g", maxDigits: 4)
                             Toggle("Contains alcohol", isOn: $drafts[index].containsAlcohol)
+                            if Integrity.macroIssue(drafts[index]) != nil,
+                               Integrity.macrosScaled(protein: drafts[index].protein, carbs: drafts[index].carbs,
+                                                      fat: drafts[index].fat, toCalories: drafts[index].calories) != nil {
+                                Button("Scale protein, carbs and fat to \(drafts[index].calories.formatted()) cal") {
+                                    scaleMacros(index)
+                                }
+                                .foregroundStyle(Palette.green)
+                            }
                         } header: {
                             Text(drafts.count > 1 ? "Item \(index + 1)" : "Entry")
                         } footer: {
                             footer(for: drafts[index])
                         }
-                    }
-                    if let error {
-                        Text(error).foregroundStyle(.red).font(.barlow(.footnote))
+                        .id(index)
                     }
                 }
                 .listRowBackground(Palette.panel)
+            }
+            .onChange(of: problemIndex) { _, index in
+                guard let index else { return }
+                withAnimation { scroller.scrollTo(index, anchor: .top) }
+            }
             }
             .themedBackground()
             .navigationTitle(title)
@@ -224,6 +240,12 @@ struct EntryEditView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) { Button(saveTitle, action: save).bold() }
+            }
+            .alert("Can't \(saveTitle.lowercased()) yet", isPresented: Binding(
+                get: { problem != nil }, set: { if !$0 { problem = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(problem ?? "")
             }
             .onAppear {
                 guard drafts.isEmpty else { return }
@@ -263,14 +285,52 @@ struct EntryEditView: View {
                 set: { drafts[index].date = LocalDate($0, in: timeZone) })
     }
 
+    private func scaleMacros(_ index: Int) {
+        let draft = drafts[index]
+        guard let scaled = Integrity.macrosScaled(protein: draft.protein, carbs: draft.carbs,
+                                                  fat: draft.fat, toCalories: draft.calories) else { return }
+        drafts[index].protein = scaled.protein
+        drafts[index].carbs = scaled.carbs
+        drafts[index].fat = scaled.fat
+    }
+
     private func save() {
+        // Close the keyboard first, so the alert and the scroll aren't hidden behind it.
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         do {
             try onSave(drafts)
             dismiss()
-        } catch is WriteRejected {
-            error = "Some numbers don't add up. Fix the items marked above, then tap \(saveTitle)."
+        } catch let rejected as WriteRejected {
+            let indices = rejected.issues.keys.sorted()
+            problemIndex = nil
+            problemIndex = indices.first
+            problem = Self.explain(rejected, drafts: drafts, saveTitle: saveTitle)
         } catch {
-            self.error = error.localizedDescription
+            problem = error.localizedDescription
         }
+    }
+
+    /// Plain words for a refused save, naming each item and what's wrong with it.
+    static func explain(_ rejected: WriteRejected, drafts: [EntryDraft], saveTitle: String) -> String {
+        let lines = rejected.issues.keys.sorted().compactMap { index -> String? in
+            let name = drafts.count > 1 ? "Item \(index + 1)" : "This entry"
+            let reasons = (rejected.issues[index] ?? []).compactMap { issue -> String? in
+                switch issue {
+                case .emptyDescription:
+                    return "it needs a description"
+                case .negativeValue(let field):
+                    return "\(field) can't be negative"
+                case .macroMismatch(let stated, let fromMacros):
+                    return "protein, carbs and fat add up to \(fromMacros.formatted()) cal, but calories say \(stated.formatted()) cal"
+                case .sourceMismatch, .needsConfirmation:
+                    return nil
+                }
+            }
+            return reasons.isEmpty ? nil : "\(name): \(reasons.joined(separator: "; "))."
+        }
+        let fix = rejected.issues.values.joined().contains { if case .macroMismatch = $0 { true } else { false } }
+            ? "Tap \"Scale protein, carbs and fat\" under the item, fix the numbers, or turn on alcohol. Then tap \(saveTitle)."
+            : "Fix the item, then tap \(saveTitle)."
+        return (lines + [fix]).joined(separator: "\n\n")
     }
 }

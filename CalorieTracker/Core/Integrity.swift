@@ -79,6 +79,19 @@ enum Integrity {
         return .macroMismatch(statedCalories: item.calories, macroCalories: fromMacros)
     }
 
+    /// Protein, carbs and fat scaled by one factor so they add up to `calories`, keeping
+    /// their proportions. For a user who corrected the calories but not the macros.
+    /// Nil when there's nothing to scale (all three are zero).
+    static func macrosScaled(protein: Int, carbs: Int, fat: Int,
+                             toCalories calories: Int) -> (protein: Int, carbs: Int, fat: Int)? {
+        let current = macroCalories(protein: protein, carbs: carbs, fat: fat)
+        guard current > 0, calories >= 0 else { return nil }
+        let factor = Double(calories) / Double(current)
+        return (Int((Double(protein) * factor).rounded()),
+                Int((Double(carbs) * factor).rounded()),
+                Int((Double(fat) * factor).rounded()))
+    }
+
     static func issues(for draft: EntryDraft, origin: EntryOrigin, confirmedByUser: Bool) -> [IntegrityIssue] {
         var found: [IntegrityIssue] = []
         if draft.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

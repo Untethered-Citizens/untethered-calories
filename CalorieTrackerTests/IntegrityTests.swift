@@ -83,3 +83,38 @@ struct IntegrityTests {
         }
     }
 }
+
+struct MacroScalingTests {
+    func draft(cal: Int, p: Int, c: Int, f: Int) -> EntryDraft {
+        EntryDraft(date: LocalDate(iso: "2026-09-26")!, meal: .dinner, description: "Dinner",
+                   calories: cal, protein: p, carbs: c, fat: f, source: .estimate, containsAlcohol: false)
+    }
+
+    @Test func scalingKeepsProportionsAndPassesTheCheck() throws {
+        // Issue #3: calories corrected from 600 to 800, macros left as they were.
+        var edited = draft(cal: 800, p: 30, c: 60, f: 20)   // macros: 540 cal
+        #expect(Integrity.macroIssue(edited) != nil)
+        let scaled = try #require(Integrity.macrosScaled(protein: 30, carbs: 60, fat: 20, toCalories: 800))
+        #expect(scaled.protein == 44 && scaled.carbs == 89 && scaled.fat == 30)
+        edited.protein = scaled.protein; edited.carbs = scaled.carbs; edited.fat = scaled.fat
+        #expect(Integrity.macroIssue(edited) == nil)
+    }
+
+    @Test func scalingDown() throws {
+        let scaled = try #require(Integrity.macrosScaled(protein: 40, carbs: 100, fat: 30, toCalories: 300))
+        #expect(Integrity.macroIssue(draft(cal: 300, p: scaled.protein, c: scaled.carbs, f: scaled.fat)) == nil)
+    }
+
+    @Test func nothingToScale() {
+        #expect(Integrity.macrosScaled(protein: 0, carbs: 0, fat: 0, toCalories: 500) == nil)
+    }
+
+    @Test func refusedSaveIsExplainedPerItem() {
+        let drafts = [draft(cal: 300, p: 20, c: 30, f: 10), draft(cal: 800, p: 30, c: 60, f: 20)]
+        let rejected = WriteRejected(issues: [1: [.macroMismatch(statedCalories: 800, macroCalories: 540)]])
+        let text = EntryEditView.explain(rejected, drafts: drafts, saveTitle: "Log")
+        #expect(text.contains("Item 2: protein, carbs and fat add up to 540 cal, but calories say 800 cal."))
+        #expect(text.contains("Then tap Log."))
+        #expect(!text.contains("Item 1"))
+    }
+}
