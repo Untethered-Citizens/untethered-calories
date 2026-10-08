@@ -148,9 +148,10 @@ private struct WeekContent: View {
                     .font(.condensed(28))
                 Spacer()
                 if let totals, totals.entryCount > 0 {
-                    (Text(totals.calories.formatted()).font(.number(28, relativeTo: .title2))
+                    let eaten = Text(totals.calories.formatted()).font(.number(28, relativeTo: .title2))
                         .foregroundStyle(over ? Palette.plum : Palette.ink)
-                     + Text(" / \(target.calories.formatted()) cal").font(.barlow(.subheadline)).foregroundStyle(Palette.muted))
+                    let ofTarget = Text(" / \(target.calories.formatted()) cal").font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
+                    Text("\(eaten)\(ofTarget)")
                 }
             }
             .foregroundStyle(Palette.ink)

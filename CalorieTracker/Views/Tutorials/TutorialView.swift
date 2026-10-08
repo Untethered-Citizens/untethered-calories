@@ -182,7 +182,7 @@ private struct KeyControls: View {
         VStack(alignment: .leading, spacing: 14) {
             if let maskedKey {
                 Label {
-                    Text("Key saved: ") + Text(maskedKey).monospaced()
+                    Text("Key saved: \(Text(maskedKey).monospaced())")
                 } icon: {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.green)
                 }

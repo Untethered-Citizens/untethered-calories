@@ -150,7 +150,9 @@ struct MacroBars: View {
             }
         }
         .frame(height: 8)
-        let amount = Text("\(rounded)").font(.number(20)) + Text(" / \(target) g").font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
+        let value = Text("\(rounded)").font(.number(20))
+        let unit = Text(" / \(target) g").font(.barlow(.subheadline)).foregroundStyle(Palette.muted)
+        let amount = Text("\(value)\(unit)")
         return Group {
             if typeSize.isAccessibilitySize {
                 // Too big to share a line: name and amount above, bar below.
@@ -237,8 +239,9 @@ struct MealRow: View {
                     .font(.barlow(.footnote, weight: .medium)).monospacedDigit().foregroundStyle(Palette.muted)
             }
             if !big { Spacer(minLength: 0) }
-            (Text(draft.calories.formatted()).font(.number(22, relativeTo: .title2))
-             + Text(" cal").font(.barlow(.footnote, weight: .medium)).foregroundStyle(Palette.muted))
+            let calories = Text(draft.calories.formatted()).font(.number(22, relativeTo: .title2))
+            let unit = Text(" cal").font(.barlow(.footnote, weight: .medium)).foregroundStyle(Palette.muted)
+            Text("\(calories)\(unit)")
                 .fixedSize()
         }
         .foregroundStyle(Palette.ink)
