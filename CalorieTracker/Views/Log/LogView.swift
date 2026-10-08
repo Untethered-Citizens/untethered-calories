@@ -15,6 +15,7 @@ struct LogView: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var showingLibrary = false
     @State private var showingCamera = false
+    @State private var clipboardHasImage = UIPasteboard.general.hasImages
     @State private var showingSettings = false
     @State private var editing: UUID?
     @State private var hasKey = APIKeyStore().hasKey
@@ -73,6 +74,10 @@ struct LogView: View {
         .onChange(of: pickerItems) { _, items in loadPicked(items) }
         .onChange(of: conversation?.revision) { _, _ in refresh() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { refresh() } }
+        // Checking for an image doesn't read the clipboard, so it doesn't trigger the paste prompt.
+        .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+            clipboardHasImage = UIPasteboard.general.hasImages
+        }
         .onAppear(perform: refresh) // entries may have been edited on another tab
         .task {
             if conversation == nil { conversation = LogConversation(context: context, store: .standard) }
@@ -266,6 +271,12 @@ struct LogView: View {
                         Button("Take photo", systemImage: "camera") { showingCamera = true }
                     }
                     Button("Choose from library", systemImage: "photo.on.rectangle") { showingLibrary = true }
+                    // A photo copied elsewhere, e.g. from Messages (issue #14). The text field only takes pasted text.
+                    // The system Paste button reads the clipboard without an "Allow Paste?" prompt;
+                    // a plain button reading it in code was refused on iOS 27.
+                    if clipboardHasImage {
+                        PasteButton(supportedContentTypes: [.image]) { providers in pastePhotos(providers) }
+                    }
                 } label: {
                     Image(systemName: "camera")
                         .font(.barlow(.title3))
@@ -331,6 +342,15 @@ struct LogView: View {
         photos.append(data)
     }
 
+    private func pastePhotos(_ providers: [NSItemProvider]) {
+        for provider in providers {
+            _ = provider.loadDataRepresentation(for: .image) { data, _ in
+                guard let data, let image = UIImage(data: data) else { return }
+                Task { @MainActor in addPhoto(image) }
+            }
+        }
+    }
+
     private func loadPicked(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
         Task {
@@ -360,6 +380,7 @@ struct LogView: View {
         targets = (try? TargetStore.current(on: today, in: context)) ?? .defaults
         eaten = (try? DayTotalsIndex.load(from: today, through: today, in: context))?[today] ?? .zero
         hasKey = APIKeyStore().hasKey
+        clipboardHasImage = UIPasteboard.general.hasImages
     }
 }
 
