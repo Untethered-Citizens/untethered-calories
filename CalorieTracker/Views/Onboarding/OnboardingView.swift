@@ -51,8 +51,8 @@ private struct WelcomeStep: View {
                 }
 
                 VStack(spacing: 0) {
-                    WelcomePoint(icon: "key", title: "Your own Anthropic key",
-                          text: "What you type or photograph is sent to Anthropic under your own account, and billed to it. There's no server of ours in between.")
+                    WelcomePoint(icon: "key", title: "Bring your own AI",
+                          text: "You add your own AI key from Anthropic. What you type or photograph is sent to Anthropic under your account, and billed to it. There's no server of ours in between.")
                     Divider().overlay(Palette.rule).padding(.leading, 70)
                     WelcomePoint(icon: "iphone", title: "Everything else stays on this iPhone",
                           text: "Your log, totals and targets are stored only here. Photos aren't kept after they're read.")

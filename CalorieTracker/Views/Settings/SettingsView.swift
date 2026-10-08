@@ -75,7 +75,7 @@ struct SettingsView: View {
                 }
                 Button("Remove key", role: .destructive) { confirmingRemoval = true }
             } else {
-                NavigationLink("Add your API key") {
+                NavigationLink("Add your AI key") {
                     APIKeyEntryView(title: "Add key") { reloadKey() }
                 }
             }
@@ -83,11 +83,11 @@ struct SettingsView: View {
                 Text(keyError).foregroundStyle(.red).font(.barlow(.footnote))
             }
         } header: {
-            Text("Anthropic API key")
+            Text("Your AI key (Anthropic)")
         } footer: {
             Text("Stored only in this iPhone's Keychain. What you log is sent to Anthropic under your own account and billed to it.")
         }
-        .confirmationDialog("Remove your API key?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
+        .confirmationDialog("Remove your AI key?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
             Button("Remove key", role: .destructive, action: removeKey)
         } message: {
             Text("Logging by conversation stops working until you add a key again. Your food log stays on this iPhone.")
@@ -110,7 +110,7 @@ struct SettingsView: View {
             Text("Model")
         } footer: {
             Text(maskedKey == nil
-                 ? "Add your key to choose from Anthropic's current models."
+                 ? "Add your AI key to choose from Anthropic's current models."
                  : "Sonnet is recommended for logging food.")
         }
     }

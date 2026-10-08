@@ -78,8 +78,8 @@ enum Tutorial: String, CaseIterable, Identifiable, Sendable {
 
     private static var keyCards: [TutorialCard] {
         let manyApps = makerName.map {
-            "The same key works in other apps that let you bring your own key, including future apps from \($0)."
-        } ?? "The same key works in other apps that let you bring your own key."
+            "The same key works in other apps that let you bring your own AI, including future apps from \($0)."
+        } ?? "The same key works in other apps that let you bring your own AI."
         return [
             TutorialCard(title: "A key is a password for apps",
                          body: "An API key is a long code that lets an app use Claude under your own Anthropic account. Think of it as a password you give to one app, which you can cancel at any time.",

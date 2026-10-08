@@ -11,7 +11,7 @@ A conversational calorie and macro tracker for iPhone. Tell it, or show it a pho
 ## How it works (planned)
 - **Logging:** chat or photo. Numbers you give (or a nutrition label) are logged immediately. Estimates are shown as a card for one-tap confirmation.
 - **Dashboard:** Today, Week, Weight (from Apple Health) and an intake-vs-weight Trend.
-- **Bring your own key:** paste an Anthropic API key once. It's stored in the iOS Keychain, and requests go straight from your phone to Anthropic.
+- **Bring your own AI:** paste your own AI key (an Anthropic API key) once. It's stored in the iOS Keychain, and requests go straight from your phone to Anthropic.
 
 ## Building
 Requires Xcode (latest) on macOS. Build instructions will be added once the Xcode project exists.

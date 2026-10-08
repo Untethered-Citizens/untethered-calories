@@ -23,7 +23,7 @@ struct WelcomeMoment: View {
             VStack(spacing: 8) {
                 Text("Untethered Calories")
                     .font(.custom(BrandFont.condensed(.semibold), size: 44, relativeTo: .largeTitle))
-                Text("AI food log · your own key")
+                Text("Food log · bring your own AI")
                     .font(.barlow(.subheadline, weight: .medium))
                     .opacity(0.85)
             }

@@ -199,7 +199,7 @@ struct LogView: View {
                 }
             }
             if !hasKey {
-                Text("Add your Anthropic API key in Settings to start. You can already ask “calories left?”.")
+                Text("Add your AI key (from Anthropic) in Settings to start. You can already ask “calories left?”.")
                     .font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
                     .multilineTextAlignment(.center)
             }
