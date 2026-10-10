@@ -203,6 +203,10 @@ struct LogView: View {
                     if CameraPicker.isAvailable { showingCamera = true } else { showingLibrary = true }
                 }
             }
+            // Keyboard dictation is the quickest way to describe a meal (issue #9).
+            Label("Tip: tap the microphone on the keyboard and just say what you ate.", systemImage: "mic")
+                .font(.barlow(.footnote)).foregroundStyle(Palette.muted)
+                .multilineTextAlignment(.center)
             if !hasKey {
                 Text("Add your AI key (from Anthropic) in Settings to start. You can already ask “calories left?”.")
                     .font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)

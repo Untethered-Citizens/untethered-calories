@@ -62,7 +62,7 @@ enum Tutorial: String, CaseIterable, Identifiable, Sendable {
                          body: "Protein, carbs and fat are your macros. Enough protein helps you keep muscle and stay full while you eat less. Carbs and fat make up the rest. The app tracks all three next to calories.",
                          picture: .macros),
             TutorialCard(title: "A budget, then a journal",
-                         body: "You set a daily calorie and macro target, or let the app work one out from your size, age and activity. Then just say what you ate. \"Calories left today\" counts down as you go.",
+                         body: "You set a daily calorie and macro target, or let the app work one out from your size, age and activity. Then just say what you ate. Tip: tap the microphone on the keyboard to talk instead of type. \"Calories left today\" counts down as you go.",
                          picture: .logExample),
             TutorialCard(title: "Labels are exact. Guesses say so.",
                          body: "Numbers from a label are logged as Label. When Claude estimates from a description or a food photo, it's marked as an estimate and you confirm it first. The Week tab shows how much of your week was estimated.",
