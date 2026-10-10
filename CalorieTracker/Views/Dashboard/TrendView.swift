@@ -53,8 +53,11 @@ struct TrendView: View {
                 .font(.condensed(24))
             Text("This view lines up what you eat against your weight trend. Day-to-day weight swings hide real change, so it stays empty until there's enough of both to say something true.")
                 .foregroundStyle(Palette.muted)
-            Text("Intake: \(min(gate.intakeDays, TrendGate.intakeDaysNeeded)) of \(TrendGate.intakeDaysNeeded) days logged. Weight: \(gate.readings) of \(TrendGate.readingsNeeded) readings.")
-                .foregroundStyle(Palette.muted)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(gate.intakeLine)
+                Text(gate.weightLine)
+            }
+            .foregroundStyle(Palette.muted)
             HStack(spacing: 4) {
                 ForEach(0..<TrendGate.intakeDaysNeeded, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 2)
@@ -64,7 +67,7 @@ struct TrendView: View {
             }
             .padding(.top, 4)
             .accessibilityElement()
-            .accessibilityLabel("\(gate.intakeDays) of \(TrendGate.intakeDaysNeeded) days logged")
+            .accessibilityLabel("\(min(gate.intakeDays, TrendGate.intakeDaysNeeded)) of \(TrendGate.intakeDaysNeeded) days logged")
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)

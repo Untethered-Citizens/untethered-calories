@@ -52,6 +52,15 @@ struct WeightTrendTests {
         #expect(TrendGate(intakeDays: 21, readings: 12).isUnlocked)
     }
 
+    @Test func lockedProgressLinesNeverShowMoreThanNeeded() {
+        let short = TrendGate(intakeDays: 2, readings: 16)
+        #expect(short.intakeLine == "Intake: 2 of 21 days logged")
+        #expect(short.weightLine == "Weight: ✓ 16 readings — enough")
+        let noWeight = TrendGate(intakeDays: 25, readings: 3)
+        #expect(noWeight.intakeLine == "Intake: ✓ 25 days logged — enough")
+        #expect(noWeight.weightLine == "Weight: 3 of 12 readings")
+    }
+
     @Test func energyBalanceFromIntakeAndTheWeightTrend() throws {
         // A steady 1 lb a week down (0.5 lb every 3.5 days, read daily), eating 1,800 a day
         // with two days unlogged.

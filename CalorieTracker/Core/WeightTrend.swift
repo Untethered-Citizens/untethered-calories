@@ -74,6 +74,19 @@ struct TrendGate: Equatable, Sendable {
     var readings: Int
 
     var isUnlocked: Bool { intakeDays >= Self.intakeDaysNeeded && readings >= Self.readingsNeeded }
+
+    /// Progress lines for the locked card. A met requirement says so, never "16 of 12".
+    var intakeLine: String {
+        intakeDays >= Self.intakeDaysNeeded
+            ? "Intake: ✓ \(intakeDays) days logged — enough"
+            : "Intake: \(intakeDays) of \(Self.intakeDaysNeeded) days logged"
+    }
+
+    var weightLine: String {
+        readings >= Self.readingsNeeded
+            ? "Weight: ✓ \(readings) readings — enough"
+            : "Weight: \(readings) of \(Self.readingsNeeded) readings"
+    }
 }
 
 /// What intake and the weight trend together imply, over the stretch where both exist.
