@@ -39,13 +39,17 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             Task { await refresh() }
         }
+        // Logging or deleting today's food changes whether today's reminder is needed (D73).
+        .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave)) { _ in
+            Task { await ReminderScheduler.reschedule(in: context) }
+        }
     }
 
     private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "maintenance")
 
     /// On launch, every return to the foreground and at midnight: fold meal detail older than
     /// the window into daily summaries (D51), bring in weight from Health, then check for
-    /// daily totals past the retention setting (D52).
+    /// daily totals past the retention setting (D52), and refresh the daily reminder (D73).
     private func refresh() async {
         clock.refresh()
         let settings = AppSettings()
@@ -61,6 +65,7 @@ struct ContentView: View {
         }
         await health.sync(into: context, today: clock.today, timeZone: settings.timeZone)
         checkRetention(settings)
+        await ReminderScheduler.reschedule(in: context, settings: settings)
     }
 
     /// Asks before deleting daily totals past the retention setting, at most monthly (D52).

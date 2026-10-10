@@ -23,6 +23,9 @@ struct SettingsView: View {
     @State private var weightUnit = WeightUnit.lb
     @State private var export: ExportFiles?
     @State private var exportError: String?
+    @State private var reminderOn = false
+    @State private var reminderTime = Date()
+    @State private var notificationsDenied = false
 
     private static let summaryChoices: [Int?] = [90, 180, 365, 730, nil]
 
@@ -34,6 +37,7 @@ struct SettingsView: View {
                     modelSection
                     targetsSection
                     usualMealsSection
+                    reminderSection
                     healthSection
                     dataSection
                     unitsSection
@@ -61,6 +65,10 @@ struct SettingsView: View {
             .sheet(item: $export) { ShareSheet(items: $0.urls) }
             .onChange(of: transcriptDays) { _, new in settings.transcriptRetentionDays = new }
             .onChange(of: weightUnit) { _, new in settings.weightUnit = new }
+            .onChange(of: reminderTime) { _, new in
+                settings.reminderMinutes = ReminderPlan.minutes(from: new, in: settings.timeZone)
+                Task { await ReminderScheduler.reschedule(in: context) }
+            }
         }
     }
 
@@ -225,6 +233,28 @@ struct SettingsView: View {
         }
     }
 
+    private var reminderSection: some View {
+        Section {
+            Toggle("Remind me to log", isOn: Binding(get: { reminderOn }, set: { setReminder($0) }))
+            if reminderOn {
+                DatePicker("Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+            }
+            if notificationsDenied {
+                Button("Allow notifications in iOS Settings") {
+                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(url) }
+                }
+            }
+        } header: {
+            Text("Daily reminder")
+        } footer: {
+            if notificationsDenied {
+                Text("Notifications are off for this app, so the reminder can't show. Turn them on in iOS Settings → Notifications → Calories.")
+            } else {
+                Text("A gentle nudge once a day. It's skipped on days you've already logged something.")
+            }
+        }
+    }
+
     private var unitsSection: some View {
         Section {
             Picker("Weight", selection: $weightUnit) {
@@ -247,6 +277,24 @@ struct SettingsView: View {
         summaryRetention = settings.summaryRetentionDays
         transcriptDays = settings.transcriptRetentionDays
         weightUnit = settings.weightUnit
+        reminderOn = settings.reminderEnabled
+        reminderTime = ReminderPlan(minutes: settings.reminderMinutes).pickerDate(in: settings.timeZone)
+        Task { notificationsDenied = await ReminderScheduler.isDenied() }
+    }
+
+    /// Turning the reminder on asks iOS for permission first; if that's refused, it stays off.
+    private func setReminder(_ on: Bool) {
+        settings.reminderOffered = true
+        Task {
+            if on {
+                let allowed = await ReminderScheduler.requestPermission()
+                notificationsDenied = !allowed
+                guard allowed else { reminderOn = false; return }
+            }
+            reminderOn = on
+            settings.reminderEnabled = on
+            await ReminderScheduler.reschedule(in: context)
+        }
     }
 
     private func reloadKey() {

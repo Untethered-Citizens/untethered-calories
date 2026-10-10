@@ -17,6 +17,9 @@ struct AppSettings {
         static let weightUnit = "weightUnit"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let lastRetentionPrompt = "lastRetentionPrompt"
+        static let reminderEnabled = "reminderEnabled"
+        static let reminderMinutes = "reminderMinutes"
+        static let reminderOffered = "reminderOffered"
     }
 
     /// Set once the first-launch flow is finished, so it only shows once.
@@ -29,6 +32,24 @@ struct AppSettings {
     var weightUnit: WeightUnit {
         get { defaults.string(forKey: Key.weightUnit).flatMap(WeightUnit.init(rawValue:)) ?? .lb }
         nonmutating set { defaults.set(newValue.rawValue, forKey: Key.weightUnit) }
+    }
+
+    /// The daily "log your food" reminder (D73). Off until the user turns it on.
+    var reminderEnabled: Bool {
+        get { defaults.bool(forKey: Key.reminderEnabled) }
+        nonmutating set { defaults.set(newValue, forKey: Key.reminderEnabled) }
+    }
+
+    /// Reminder time as minutes after midnight. Defaults to 5:00 PM.
+    var reminderMinutes: Int {
+        get { (defaults.object(forKey: Key.reminderMinutes) as? Int).map { min(max($0, 0), 1439) } ?? ReminderPlan.defaultMinutes }
+        nonmutating set { defaults.set(min(max(newValue, 0), 1439), forKey: Key.reminderMinutes) }
+    }
+
+    /// Set once the Log screen has offered the reminder, so the offer shows only once.
+    var reminderOffered: Bool {
+        get { defaults.bool(forKey: Key.reminderOffered) }
+        nonmutating set { defaults.set(newValue, forKey: Key.reminderOffered) }
     }
 
     /// Days of meal-level detail kept before roll-up (D13).

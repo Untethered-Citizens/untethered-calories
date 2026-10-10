@@ -23,6 +23,7 @@ struct LogView: View {
     @State private var today = LocalDate.today(in: AppSettings().timeZone)
     @State private var targets = MacroTargets.defaults
     @State private var eaten = NutritionTotals.zero
+    @State private var offeringReminder = false
 
     @FocusState private var composerFocused: Bool
 
@@ -45,6 +46,7 @@ struct LogView: View {
                         thread(conversation)
                     }
                     if let failure = conversation.failure { failureBanner(failure, conversation) }
+                    else if offeringReminder { reminderOffer }
                     composer(conversation)
                 }
             }
@@ -261,6 +263,41 @@ struct LogView: View {
         .background(.orange.opacity(0.12))
     }
 
+    /// Offered once, after the first food is logged (issue #12, D73). iOS asks for
+    /// notification permission only if the user says yes.
+    private var reminderOffer: some View {
+        let time = ReminderPlan(minutes: AppSettings().reminderMinutes).timeText(in: AppSettings().timeZone)
+        return HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "bell").foregroundStyle(Palette.green).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Want a daily reminder to log your food? It's skipped on days you've already logged. You can change it in Settings.")
+                    .font(.barlow(.footnote))
+                HStack {
+                    Button("Remind me at \(time)") { answerReminderOffer(yes: true) }
+                        .buttonStyle(.borderedProminent)
+                    Button("No thanks") { answerReminderOffer(yes: false) }
+                        .buttonStyle(.bordered)
+                }
+                .controlSize(.small)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Palette.panel)
+    }
+
+    private func answerReminderOffer(yes: Bool) {
+        let settings = AppSettings()
+        settings.reminderOffered = true
+        withAnimation { offeringReminder = false }
+        guard yes else { return }
+        Task {
+            guard await ReminderScheduler.requestPermission() else { return }
+            settings.reminderEnabled = true
+            await ReminderScheduler.reschedule(in: context, settings: settings)
+        }
+    }
+
     // MARK: Composer
 
     private func composer(_ conversation: LogConversation) -> some View {
@@ -384,6 +421,7 @@ struct LogView: View {
         targets = (try? TargetStore.current(on: today, in: context)) ?? .defaults
         eaten = (try? DayTotalsIndex.load(from: today, through: today, in: context))?[today] ?? .zero
         hasKey = APIKeyStore().hasKey
+        offeringReminder = !settings.reminderOffered && !settings.reminderEnabled && eaten.entryCount > 0
         clipboardHasImage = UIPasteboard.general.hasImages
     }
 }
