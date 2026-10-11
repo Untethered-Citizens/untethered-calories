@@ -239,7 +239,13 @@ struct WeekChart: View {
     var onSelect: (LocalDate) -> Void
 
     private var maxValue: Int {
-        max(Int(Double(target) * 1.4), days.map { totals[$0]?.calories ?? 0 }.max() ?? 0)
+        Self.scaleTop(target: target, highest: days.map { totals[$0]?.calories ?? 0 }.max() ?? 0)
+    }
+
+    /// Top of the calorie axis: at least 1.4× the target, and always 12% above the tallest bar
+    /// so the value drawn above it isn't clipped by the plot edge (issue #20).
+    static func scaleTop(target: Int, highest: Int) -> Int {
+        max(Int(Double(target) * 1.4), Int((Double(highest) * 1.12).rounded(.up)))
     }
 
     var body: some View {
