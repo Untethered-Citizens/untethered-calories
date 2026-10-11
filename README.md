@@ -1,21 +1,88 @@
-# Calorie Tracker (working name)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
+    <img src="docs/images/hero-light.png" alt="Untethered Calories on iPhone: the Today screen, a logging conversation with an estimate card, and the Week chart">
+  </picture>
+</p>
 
-A conversational calorie and macro tracker for iPhone. Tell it, or show it a photo of, what you ate, and Claude turns that into logged entries using **your own Anthropic API key**.
+<h1 align="center">Untethered Calories</h1>
 
-- All data stays on your device.
-- No accounts, ads, subscriptions or tracking.
-- Every entry is honestly labelled as coming from a label or an estimate.
+<p align="center"><b>Food log · bring your own AI</b><br>
+A calorie and macro tracker for iPhone where logging is a conversation, not a form.</p>
 
-> Status: early development. Not yet usable.
+<p align="center">
+  No accounts · No ads, analytics or tracking · No subscription
+</p>
 
-## How it works (planned)
-- **Logging:** chat or photo. Numbers you give (or a nutrition label) are logged immediately. Estimates are shown as a card for one-tap confirmation.
-- **Dashboard:** Today, Week, Weight (from Apple Health) and an intake-vs-weight Trend.
-- **Bring your own AI:** paste your own AI key (an Anthropic API key) once. It's stored in the iOS Keychain, and requests go straight from your phone to Anthropic.
+---
 
-## Building
-Requires Xcode (latest) on macOS. Build instructions will be added once the Xcode project exists.
+## Just say what you ate
+
+Type it, dictate it, or take a photo. The app turns "two eggs and toast, and a latte" into logged entries with calories, protein, carbs and fat. It uses Claude, through **your own AI key**.
+
+- **Numbers you give are logged straight away.** Tell it "protein bar, label says 210 cal, 20 g protein…" or photograph a nutrition label, and it's saved at once.
+- **Estimates are proposed and wait for you.** For a home-cooked dinner or a restaurant plate, you get an estimate card. Accept it with one tap, or edit it first.
+- **It asks when it needs to.** If a portion or a cooking oil matters, it asks a short question instead of guessing.
+- **"How much have I got left?"** is answered on the phone itself, without calling the AI.
+
+## Honest about where every number came from
+
+Every entry is marked as one of three sources, and the charts show them differently:
+
+| Source | Meaning |
+|---|---|
+| **Label** | You gave the numbers, or they were read from a nutrition label |
+| **Estimate** | Claude's estimate from your description |
+| **Photo estimate** | Claude's estimate from a photo of the food |
+
+An estimate is never upgraded to look like a label. Each day also shows how much of it was estimated ("83% estimated"), so you know how firm the numbers are.
+
+## A dashboard that does the maths on your phone
+
+- **Today:** calories left, a protein/carbs/fat breakdown, and your meals. Swipe to edit or delete.
+- **Week:** a bar for each day against your target, split by source, plus averages.
+- **Weight:** read from Apple Health, with a 7-day average.
+- **Trend:** intake and weight side by side, and what the two say together.
+
+Totals, averages and charts are plain on-device code, with no AI involved. Days you didn't log are treated as gaps, never as zero, and today isn't counted in averages until it's over.
+
+## Bring your own AI
+
+The app has no server and no subscription. Instead, you paste your own Anthropic API key once:
+
+- The key is stored in the iOS **Keychain** on your phone.
+- Your messages and food photos go **straight from your phone to Anthropic**, under your own account. They don't pass through anyone else.
+- Anthropic bills you directly for what you use. That's usually **less than a cent to a couple of cents per entry** (a photo costs a little more). Settings → Usage and cost shows what you've spent.
+- You choose the Claude model in Settings.
+
+Your food log and settings stay on your iPhone.
+
+## Requirements
+
+- iPhone with **iOS 26** or later
+- An Anthropic API key ([console.anthropic.com](https://console.anthropic.com)). The app walks you through getting one.
+- Optional: Apple Health, for weight
+
+## Status
+
+In active development and in personal beta. An App Store release is coming. This repository is the app's source code.
+
+## Building from source
+
+1. Install the latest **Xcode** on a Mac.
+2. Clone this repository and open `CalorieTracker.xcodeproj`.
+3. Choose the **CalorieTracker** scheme and an iPhone simulator, then press **⌘R**.
+
+To run the tests from the command line:
+
+```bash
+xcodebuild -project CalorieTracker.xcodeproj -scheme CalorieTracker -destination 'platform=iOS Simulator,name=iPhone 17' test
+```
+
+No API key is needed to build or run the tests. Add your own key in the app's Settings to try logging. Never commit a key.
 
 ## Credits
+
+Made by [Untethered Citizens](https://github.com/Untethered-Citizens), tools for living on your own terms.
 
 The app uses the [Barlow](https://github.com/jpt/barlow) and Barlow Condensed typefaces by The Barlow Project Authors, under the SIL Open Font License 1.1 (`CalorieTracker/Resources/Fonts/OFL.txt`).
