@@ -81,6 +81,12 @@ xcodebuild -project CalorieTracker.xcodeproj -scheme CalorieTracker -destination
 
 No API key is needed to build or run the tests. Add your own key in the app's Settings to try logging. Never commit a key.
 
+## More
+
+- Website: [untetheredcalories.com](https://untetheredcalories.com/)
+- [Privacy policy](https://untetheredcalories.com/privacy/)
+- [Help and support](https://untetheredcalories.com/support/)
+
 ## Credits
 
 Made by [Untethered Citizens](https://github.com/Untethered-Citizens), tools for living on your own terms.
