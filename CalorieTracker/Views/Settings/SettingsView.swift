@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Settings: API key, model, targets, data retention, units and tutorials.
+/// Settings: API key, model, targets, data retention, units, tutorials and About.
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -42,6 +42,7 @@ struct SettingsView: View {
                     dataSection
                     unitsSection
                     tutorialsSection
+                    aboutSection
                     #if DEBUG && targetEnvironment(simulator)
                     sampleSection
                     #endif
@@ -192,6 +193,19 @@ struct SettingsView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var aboutSection: some View {
+        Section {
+            Link(destination: AppLinks.website) { Label("Website", systemImage: "globe") }
+            Link(destination: AppLinks.privacy) { Label("Privacy policy", systemImage: "hand.raised") }
+            Link(destination: AppLinks.support) { Label("Help and support", systemImage: "questionmark.circle") }
+            LabeledContent("Version", value: AppLinks.versionText())
+        } header: {
+            Text("About")
+        } footer: {
+            Text("Links open untetheredcalories.com in Safari.")
         }
     }
 
