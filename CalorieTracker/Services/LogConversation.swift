@@ -499,6 +499,7 @@ final class LogConversation {
             return Failure(message: "Sharing with Anthropic is off, so nothing was sent.",
                            canRetry: false, needsConsent: true)
         case .billing, .permissionDenied:
+            // The message is kept: after adding credit (or fixing the key's access), Retry sends it.
             return Failure(message: error.userMessage, canRetry: true)
         case .other(let status, let message):
             if status == 400 || status == 413 {

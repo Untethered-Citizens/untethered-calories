@@ -60,7 +60,7 @@ struct AnthropicClientTests {
 
     @Test(arguments: [
         (401, AnthropicError.invalidKey),
-        (402, AnthropicError.billing("Out of credit")),
+        (402, AnthropicError.billing),
         (403, AnthropicError.permissionDenied("Out of credit")),
         (429, AnthropicError.rateLimited(retryAfter: 20)),
         (500, AnthropicError.serverBusy),
@@ -75,6 +75,35 @@ struct AnthropicClientTests {
         }
     }
 
+    /// Anthropic's billing wording (issue #29), from platform.claude.com/docs/en/api/errors and /rate-limits.
+    @Test(arguments: [
+        (400, "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.", nil),
+        (400, "You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC.", nil),
+        (400, "You have reached your specified workspace API usage limits. You will regain access on 2026-11-01 at 00:00 UTC.", nil),
+        (429, "You have reached your API usage limits: your organization has crossed its monthly API usage threshold.", "enforced_spend_limit_reached"),
+    ] as [(Int, String, String?)])
+    func mapsBillingErrors(status: Int, message: String, code: String?) async {
+        let details = code.map { #","details":{"error_code":"\#($0)"}"# } ?? ""
+        let body = #"{"type":"error","error":{"type":"x","message":"\#(message)"\#(details)}}"#
+        let stub = StubTransport([.http(status, body)])
+        await #expect(throws: AnthropicError.billing) {
+            try await AnthropicClient(apiKey: fakeKey, transport: stub).listModels()
+        }
+    }
+
+    @Test func otherBadRequestsAndRateLimitsAreNotBilling() {
+        #expect(!AnthropicClient.isBilling(status: 400, message: "messages: field required", code: nil))
+        #expect(!AnthropicClient.isBilling(status: 429, message: "Number of request tokens has exceeded your per-minute rate limit", code: nil))
+        #expect(!AnthropicClient.isBilling(status: 500, message: "credit balance", code: nil))
+    }
+
+    @MainActor @Test func billingMessageIsPlainAndRetryable() {
+        let failure = LogConversation.failure(for: AnthropicError.billing)
+        #expect(failure.canRetry)
+        #expect(failure.message.contains("out of credit or has reached its spend limit"))
+        #expect(!failure.message.contains("new conversation"))
+    }
+
     @Test func offlineIsItsOwnError() async {
         let stub = StubTransport([.failure(URLError(.notConnectedToInternet))])
         await #expect(throws: AnthropicError.offline) {
@@ -83,7 +112,7 @@ struct AnthropicClientTests {
     }
 
     @Test func errorMessagesNeverContainTheKey() {
-        let all: [AnthropicError] = [.invalidKey, .billing("b"), .permissionDenied("p"), .rateLimited(retryAfter: nil),
+        let all: [AnthropicError] = [.invalidKey, .billing, .permissionDenied("p"), .rateLimited(retryAfter: nil),
                                      .serverBusy, .offline, .other(status: 418, message: "m")]
         #expect(all.allSatisfy { !$0.userMessage.contains("sk-ant") })
     }

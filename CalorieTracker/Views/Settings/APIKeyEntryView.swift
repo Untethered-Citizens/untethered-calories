@@ -13,6 +13,8 @@ struct APIKeyEntryView: View {
     @State private var failure: AnthropicError?
     @State private var saveError: String?
     @State private var askingConsent = false
+    /// Hidden by default. Showing it lets you check a long pasted key for typos (issue #29).
+    @State private var showsKey = false
 
     private var cleaned: String { APIKeyStore.clean(key) }
 
@@ -20,13 +22,30 @@ struct APIKeyEntryView: View {
         Form {
             Group {
                 Section {
-                    SecureField("sk-ant-…", text: $key)
+                    HStack {
+                        Group {
+                            if showsKey {
+                                TextField("sk-ant-…", text: $key, axis: .vertical)
+                            } else {
+                                SecureField("sk-ant-…", text: $key)
+                            }
+                        }
                         .textContentType(.password)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .monospaced()
                         .disabled(checking)
                         .onChange(of: key) { failure = nil }
+
+                        Button {
+                            showsKey.toggle()
+                        } label: {
+                            Image(systemName: showsKey ? "eye.slash" : "eye")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(showsKey ? "Hide key" : "Show key")
+                    }
                 } footer: {
                     VStack(alignment: .leading, spacing: 6) {
                         if !cleaned.isEmpty && !APIKeyStore.looksLikeAnthropicKey(cleaned) {
