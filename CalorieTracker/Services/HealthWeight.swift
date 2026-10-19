@@ -16,8 +16,11 @@ final class HealthWeight {
     /// True until the permission sheet has been shown once. After that iOS won't show it again.
     private(set) var needsRequest = true
 
+    /// Where iOS lets you change Health access. iOS lists the app by its display name, "Calories" (D70, issue #31).
+    static let accessPath = "Settings → Privacy & Security → Health → Calories"
+
     /// Shown when access was asked for but no weights have arrived.
-    static let noReadingsHelp = "No weights in the last 90 days. Tap Add weight, or weigh in on a smart scale that saves to Apple Health. If you've weighed in and nothing shows, check access: Settings → Privacy & Security → Health → Untethered, and turn on Weight."
+    static let noReadingsHelp = "No weights in the last 90 days. Tap Add weight, or weigh in on a smart scale that saves to Apple Health. If you've weighed in and nothing shows, check access: \(accessPath), and turn on Weight."
 
     private let store = HKHealthStore()
     private let bodyMass = HKQuantityType(.bodyMass)
@@ -50,7 +53,7 @@ final class HealthWeight {
         case notAllowed
 
         var errorDescription: String? {
-            "Untethered Calories isn't allowed to save weight to Apple Health. To allow it: Settings → Privacy & Security → Health → Untethered, and turn on Weight under the apps allowed to write data."
+            "Untethered Calories isn't allowed to save weight to Apple Health. To allow it: \(HealthWeight.accessPath), and turn on Weight under the apps allowed to write data."
         }
     }
 

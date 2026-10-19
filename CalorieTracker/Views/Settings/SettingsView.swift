@@ -251,7 +251,7 @@ struct SettingsView: View {
         } header: {
             Text("Apple Health")
         } footer: {
-            Text("The app reads your weight (the last reading of each day, for the last 90 days). It writes only the weights you add on the Weight tab. If you allow sharing with Anthropic, weights can be sent to answer your questions about earlier days. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: Settings → Privacy & Security → Health → Untethered.")
+            Text("The app reads your weight (the last reading of each day, for the last 90 days). It writes only the weights you add on the Weight tab. If you allow sharing with Anthropic, weights can be sent to answer your questions about earlier days. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: \(HealthWeight.accessPath).")
         }
     }
 
