@@ -49,6 +49,15 @@ struct TutorialTests {
         }
     }
 
+    /// No priced call to action for Anthropic credit (App Review 3.1.1, issue #30).
+    @Test func noPricesForCredit() {
+        for tutorial in Tutorial.allCases {
+            for card in tutorial.cards() {
+                #expect(!card.fullText.contains("$"), "\(card.title) quotes a price")
+            }
+        }
+    }
+
     @Test func safetyFloorsMatchTheTargetHelper() {
         let safety = Tutorial.losingWeight.cards().last!
         #expect(safety.body.contains("1,200") && safety.body.contains("1,500"))
