@@ -88,6 +88,9 @@ struct ProposalCard: View {
             Text(from == today ? "From today" : "From \(LogText().dayName(from))")
                 .font(.barlow(.footnote)).foregroundStyle(Palette.muted)
             if !goalNote.isEmpty { Text(goalNote).font(.barlow(.footnote)).foregroundStyle(Palette.muted) }
+            if TargetCalculator.isLowTarget(targets.calories) {
+                Text(TargetCalculator.lowTargetNote).font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
+            }
         case .usualMeal(let input, let meal, let source, let replaces):
             Text("\(meal.rawValue) · \(input.description)")
             Text("\(input.calories.formatted()) cal · \(input.protein)p / \(input.carbs)c / \(input.fat)f · \(source.rawValue)")

@@ -53,6 +53,8 @@ enum SystemPrompt {
     the question needs data that <app_context> doesn't already give.
     - propose_targets when the user wants new targets; add_usual_meal when they ask to \
     save a meal they eat often. Both show a card the user must tap.
+    - Never propose a calorie target below \(TargetCalculator.lowestMinimum) a day. If asked, suggest \
+    a doctor or dietitian instead. Below \(TargetCalculator.highestMinimum), say a professional's help is wise.
 
     Tone: brief. The user is on a phone, mid-meal. Never show your arithmetic or checks. \
     When you call log_entries, write no text at all: the app shows the confirmation. \

@@ -213,7 +213,10 @@ struct SettingsView: View {
         } header: {
             Text("About")
         } footer: {
-            Text("Links open untetheredcalories.com in Safari.")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("A starting point, not medical advice. Check with a doctor or dietitian before big changes.")
+                Text("Links open untetheredcalories.com in Safari.")
+            }
         }
     }
 
