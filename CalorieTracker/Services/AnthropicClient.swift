@@ -20,8 +20,9 @@ enum AnthropicError: Error, Equatable {
     case invalidKey
     /// 403: the key is real but can't do this (organization or workspace settings).
     case permissionDenied(String)
-    /// 402: a billing problem on the user's Anthropic account.
-    case billing(String)
+    /// The account is out of credit, has reached a spend limit, or has a payment problem (issue #29).
+    /// Anthropic sends this as a 402, a 400 or a spend-cap 429; `error(status:data:headers:)` sorts them.
+    case billing
     /// 429: too many requests. `retryAfter` is in seconds when the server says.
     case rateLimited(retryAfter: Int?)
     /// 500 and 529: Anthropic's side is having trouble. Worth retrying later.
@@ -38,7 +39,7 @@ enum AnthropicError: Error, Equatable {
         switch self {
         case .invalidKey: "Anthropic didn't accept this key. Check that you copied all of it, and that it hasn't been deleted in the Console."
         case .permissionDenied(let detail): "This key isn't allowed to do that. \(detail)"
-        case .billing(let detail): "There's a billing problem on your Anthropic account. \(detail)"
+        case .billing: "Your Anthropic account is out of credit or has reached its spend limit. Add credit or raise the limit in the Anthropic Console, then try again."
         case .rateLimited: "Anthropic is limiting requests right now. Try again in a minute."
         case .serverBusy: "Anthropic is busy right now. Try again in a minute."
         case .offline: "You're offline, so the key couldn't be checked."
@@ -107,7 +108,12 @@ struct AnthropicClient: Sendable {
     }
 
     private struct ErrorBody: Decodable {
-        struct Detail: Decodable { let type: String; let message: String }
+        struct Detail: Decodable {
+            let type: String
+            let message: String
+            let details: Extra?
+        }
+        struct Extra: Decodable { let error_code: String? }
         let error: Detail
     }
 
@@ -144,14 +150,34 @@ struct AnthropicClient: Sendable {
     }
 
     static func error(status: Int, data: Data, headers: HTTPURLResponse) -> AnthropicError {
-        let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error.message ?? ""
+        let body = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error
+        let message = body?.message ?? ""
+        if isBilling(status: status, message: message, code: body?.details?.error_code) { return .billing }
         switch status {
         case 401: return .invalidKey
-        case 402: return .billing(message)
         case 403: return .permissionDenied(message)
         case 429: return .rateLimited(retryAfter: headers.value(forHTTPHeaderField: "retry-after").flatMap(Int.init))
         case 500, 502, 503, 504, 529: return .serverBusy
         default: return .other(status: status, message: message)
+        }
+    }
+
+    /// Billing problems, matched loosely on Anthropic's wording so small rewordings still match:
+    /// - 402 `billing_error`.
+    /// - 400 when credit runs out ("Your credit balance is too low…") or a spend limit the user set is
+    ///   reached ("You have reached your specified API usage limits", or "…workspace API usage limits").
+    /// - 429 with `enforced_spend_limit_reached`: the usage tier's monthly cap. Retrying won't help until it resets.
+    static func isBilling(status: Int, message: String, code: String?) -> Bool {
+        switch status {
+        case 402:
+            return true
+        case 400:
+            let text = message.lowercased()
+            return ["credit balance", "usage limit", "spend limit"].contains { text.contains($0) }
+        case 429:
+            return code == "enforced_spend_limit_reached"
+        default:
+            return false
         }
     }
 
