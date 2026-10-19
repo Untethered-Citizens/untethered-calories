@@ -15,6 +15,8 @@ struct SettingsView: View {
     @State private var modelID: String?
     @State private var keyError: String?
     @State private var confirmingRemoval = false
+    @State private var sharing = false
+    @State private var askingConsent = false
     @State private var targets = MacroTargets.defaults
 
     @State private var detailWindowDays = 14
@@ -64,6 +66,9 @@ struct SettingsView: View {
                 settings.lastRetentionPrompt = nil
             }
             .sheet(item: $export) { ShareSheet(items: $0.urls) }
+            .sheet(isPresented: $askingConsent, onDismiss: reloadKey) {
+                AIConsentView { _ in askingConsent = false }
+            }
             .onChange(of: transcriptDays) { _, new in settings.transcriptRetentionDays = new }
             .onChange(of: weightUnit) { _, new in settings.weightUnit = new }
             .onChange(of: reminderTime) { _, new in
@@ -82,6 +87,7 @@ struct SettingsView: View {
                 NavigationLink("Replace key") {
                     APIKeyEntryView(title: "Replace key") { reloadKey() }
                 }
+                Toggle("Share with Anthropic", isOn: Binding(get: { sharing }, set: { setSharing($0) }))
                 Button("Remove key", role: .destructive) { confirmingRemoval = true }
             } else {
                 NavigationLink("Add your AI key") {
@@ -94,12 +100,14 @@ struct SettingsView: View {
         } header: {
             Text("Your AI key (Anthropic)")
         } footer: {
-            Text("Stored only in this iPhone's Keychain. What you log is sent to Anthropic under your own account and billed to it.")
+            Text(maskedKey == nil || sharing
+                 ? "Your key is stored only in this iPhone's Keychain. What you log is sent to Anthropic under your own account and billed to it. Turn off Share with Anthropic to stop sending anything."
+                 : "Sharing is off, so nothing is sent to Anthropic and logging by conversation is paused. Everything else still works. Turn it on to see what's sent and allow it.")
         }
         .confirmationDialog("Remove your AI key?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
             Button("Remove key", role: .destructive, action: removeKey)
         } message: {
-            Text("Logging by conversation stops working until you add a key again. Your food log stays on this iPhone.")
+            Text("Logging by conversation stops working until you add a key again, and a new key asks again before sharing with Anthropic. Your food log stays on this iPhone.")
         }
     }
 
@@ -243,7 +251,7 @@ struct SettingsView: View {
         } header: {
             Text("Apple Health")
         } footer: {
-            Text("The app reads your weight (the last reading of each day, for the last 90 days). It writes only the weights you add on the Weight tab. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: Settings → Privacy & Security → Health → Untethered.")
+            Text("The app reads your weight (the last reading of each day, for the last 90 days). It writes only the weights you add on the Weight tab. If you allow sharing with Anthropic, weights can be sent to answer your questions about earlier days. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: Settings → Privacy & Security → Health → Untethered.")
         }
     }
 
@@ -315,10 +323,21 @@ struct SettingsView: View {
         do {
             maskedKey = try keyStore.load().map(APIKeyStore.masked)
             modelID = settings.modelID
+            sharing = settings.aiConsent == .allowed
             keyError = nil
         } catch {
             maskedKey = nil
             keyError = "Couldn't read the Keychain."
+        }
+    }
+
+    /// Off withdraws at once. On shows the consent screen again; only Allow turns it on (issue #28).
+    private func setSharing(_ on: Bool) {
+        if on {
+            askingConsent = true
+        } else {
+            settings.declineAI()
+            sharing = false
         }
     }
 
@@ -329,6 +348,8 @@ struct SettingsView: View {
     private func removeKey() {
         do {
             try keyStore.delete()
+            // The next key saved asks again (issue #28).
+            settings.resetAIConsent()
             reloadKey()
         } catch {
             keyError = "Couldn't remove the key from the Keychain."

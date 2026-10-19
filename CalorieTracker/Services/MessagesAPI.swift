@@ -146,6 +146,8 @@ struct MessagesRequest: Encodable, Sendable {
 extension AnthropicClient {
     /// One call to the Messages API. Errors come back as `AnthropicError`.
     func createMessage(_ body: MessagesRequest) async throws -> MessageResponse {
+        // The one place consent is enforced: no request is built without it.
+        guard mayCreateMessages() else { throw AnthropicError.noConsent }
         var request = request(Self.baseURL.appending(path: "messages"), method: "POST")
         request.timeoutInterval = 90 // photos and a busy server can take a while
         request.httpBody = try body.body()

@@ -85,7 +85,7 @@ enum Tutorial: String, CaseIterable, Identifiable, Sendable {
                          body: "An API key is a long code that lets an app use Claude under your own Anthropic account. Think of it as a password you give to one app, which you can cancel at any time.",
                          picture: .keyConcept),
             TutorialCard(title: "No middleman",
-                         body: "There's no account to make with us, no subscription and no server of ours. What you type or photograph goes straight from your iPhone to Anthropic. Your log stays on this iPhone.",
+                         body: "No account with us, no subscription, no server of ours. Once you allow it, what you type or photograph goes straight from your iPhone to Anthropic, as can earlier days' meals and weights you ask about. Your log is stored only on this iPhone.",
                          picture: .direct),
             TutorialCard(title: "Pay only for what you use",
                          body: "Anthropic bills your account for each message, usually less than a cent to a couple of cents per entry (a photo costs a little more). You can see what you've spent in Settings → Usage and cost.",

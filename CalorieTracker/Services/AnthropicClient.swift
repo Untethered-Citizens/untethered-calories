@@ -28,6 +28,8 @@ enum AnthropicError: Error, Equatable {
     case serverBusy
     /// No connection, or the request timed out.
     case offline
+    /// The user hasn't allowed sending to Anthropic (issue #28). Nothing was sent.
+    case noConsent
     /// Anything else, with Anthropic's message when there is one.
     case other(status: Int, message: String)
 
@@ -40,6 +42,7 @@ enum AnthropicError: Error, Equatable {
         case .rateLimited: "Anthropic is limiting requests right now. Try again in a minute."
         case .serverBusy: "Anthropic is busy right now. Try again in a minute."
         case .offline: "You're offline, so the key couldn't be checked."
+        case .noConsent: "Sharing with Anthropic is off, so nothing was sent."
         case .other(let status, let message): "Something went wrong (\(status)). \(message)"
         }
     }
@@ -68,6 +71,10 @@ struct AnthropicClient: Sendable {
 
     let apiKey: String
     var transport: HTTPTransport = URLSessionTransport()
+    /// Asked before every Messages API call (issue #28). Off unless the caller passes the
+    /// stored consent, so a new call site can't send food data without asking. Listing
+    /// models only checks the key and isn't gated.
+    var mayCreateMessages: @Sendable () -> Bool = { false }
 
     /// The models this key can use, newest first. This also checks the key:
     /// listing models is free (no tokens), and a bad key gets `.invalidKey`.
