@@ -92,7 +92,7 @@ enum Tutorial: String, CaseIterable, Identifiable, Sendable {
                          picture: .cost),
             TutorialCard(title: "Create an Anthropic account",
                          steps: ["Open platform.claude.com and sign up.",
-                                 "Go to Billing and add a little credit. $5 lasts most people months.",
+                                 "Go to Billing and add credit.",
                                  "Set a monthly spend limit so you're never surprised."],
                          note: "API use is billed separately from a Claude.ai subscription.",
                          link: TutorialLink(title: "Open the Anthropic Console", url: consoleURL),
