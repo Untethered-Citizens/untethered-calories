@@ -52,16 +52,20 @@ private struct WelcomeStep: View {
 
                 VStack(spacing: 0) {
                     WelcomePoint(icon: "key", title: "Bring your own AI",
-                          text: "You add your own AI key from Anthropic. What you type or photograph is sent to Anthropic under your account, and billed to it. There's no server of ours in between.")
+                          text: "You add your own AI key from Anthropic. Once you allow it, what you log is sent to Anthropic under your account, and billed to it. There's no server of ours in between.")
                     Divider().overlay(Palette.rule).padding(.leading, 70)
-                    WelcomePoint(icon: "iphone", title: "Everything else stays on this iPhone",
-                          text: "Your log, totals and targets are stored only here. Photos aren't kept after they're read.")
+                    WelcomePoint(icon: "iphone", title: "Stored only on this iPhone",
+                          text: "Your log, totals, targets and weights are stored only here. Copies go to Anthropic only as the app explains before you allow it. Photos aren't kept after they're read.")
                     Divider().overlay(Palette.rule).padding(.leading, 70)
                     WelcomePoint(icon: "hand.raised", title: "No account, no ads, no tracking",
-                          text: "Nothing to sign up for, and nothing about you is collected.")
+                          text: "Nothing to sign up for, and we collect nothing.")
                 }
                 .background(Palette.panel, in: .rect(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Palette.rule))
+
+                Link("Read our privacy policy", destination: AppLinks.privacy)
+                    .font(.barlow(.subheadline))
+                    .foregroundStyle(Palette.green)
             }
             .foregroundStyle(Palette.ink)
             .padding(.horizontal, 24)

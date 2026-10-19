@@ -51,6 +51,7 @@ struct LogConversationTests {
         settings = AppSettings(defaults: UserDefaults(suiteName: "LogConversationTests-\(UUID())")!)
         settings.modelID = modelID
         settings.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        settings.allowAI() // consent has its own tests in AIConsentTests
     }
 
     var context: ModelContext { container.mainContext }
@@ -536,6 +537,7 @@ struct ChatKeepingTests {
         settings = AppSettings(defaults: UserDefaults(suiteName: "ChatKeepingTests-\(UUID())")!)
         settings.modelID = modelID
         settings.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        settings.allowAI()
         store = ChatStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("chat-\(UUID()).json"))
     }
 

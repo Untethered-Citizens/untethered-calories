@@ -19,6 +19,8 @@ struct LogView: View {
     @State private var showingSettings = false
     @State private var editing: UUID?
     @State private var hasKey = APIKeyStore().hasKey
+    @State private var consent = AppSettings().aiConsent
+    @State private var askingConsent = false
 
     @State private var today = LocalDate.today(in: AppSettings().timeZone)
     @State private var targets = MacroTargets.defaults
@@ -45,7 +47,8 @@ struct LogView: View {
                     } else {
                         thread(conversation)
                     }
-                    if let failure = conversation.failure { failureBanner(failure, conversation) }
+                    if hasKey && consent == .declined { sharingOffPanel }
+                    else if let failure = conversation.failure { failureBanner(failure, conversation) }
                     else if offeringReminder { reminderOffer }
                     composer(conversation)
                 }
@@ -68,6 +71,9 @@ struct LogView: View {
         }
         .sheet(isPresented: $showingSettings, onDismiss: refresh) { SettingsView() }
         .sheet(item: $editing) { id in editSheet(id) }
+        .sheet(isPresented: $askingConsent) {
+            AIConsentView { allowed in answeredConsent(allowed) }
+        }
         .fullScreenCover(isPresented: $showingCamera) {
             CameraPicker { image in addPhoto(image) }.ignoresSafeArea()
         }
@@ -213,6 +219,10 @@ struct LogView: View {
                 Text("Add your AI key (from Anthropic) in Settings to start. You can already ask “calories left?”.")
                     .font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
                     .multilineTextAlignment(.center)
+            } else if consent == .declined {
+                Text("Sharing with Anthropic is off, so logging by conversation is paused. You can still ask “calories left?”.")
+                    .font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
+                    .multilineTextAlignment(.center)
             }
         }
         .foregroundStyle(Palette.ink)
@@ -238,6 +248,32 @@ struct LogView: View {
         .buttonStyle(.plain)
     }
 
+    /// After "Don't allow" or the Settings switch turned off (issue #28). Nothing is sent
+    /// until the user reviews the consent screen again and allows it.
+    private var sharingOffPanel: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "pause.circle.fill").foregroundStyle(Palette.ochre)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("AI logging is off. Nothing is sent to Anthropic. Today, Week, Weight and Trend still work.")
+                    .font(.barlow(.footnote))
+                Button("Review and allow") { askingConsent = true }
+                    .buttonStyle(.bordered).controlSize(.small)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Palette.ochreSoft.opacity(0.5))
+    }
+
+    private func answeredConsent(_ allowed: Bool) {
+        askingConsent = false
+        consent = AppSettings().aiConsent
+        guard allowed, let conversation else { return }
+        if conversation.failure?.needsConsent == true { conversation.clearFailure() }
+        // The message that brought up the screen goes now.
+        if !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !photos.isEmpty { send(conversation) }
+    }
+
     private func failureBanner(_ failure: LogConversation.Failure, _ conversation: LogConversation) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
@@ -247,7 +283,9 @@ struct LogView: View {
                     if failure.canRetry {
                         Button("Retry") { Task { await conversation.retry() } }
                     }
-                    if failure.needsKey {
+                    if failure.needsConsent {
+                        Button("Review and allow") { askingConsent = true }
+                    } else if failure.needsKey {
                         Button("Settings") { showingSettings = true }
                     } else if !failure.canRetry {
                         Button("New chat") { startNewChat() }
@@ -356,6 +394,15 @@ struct LogView: View {
     }
 
     private func send(_ conversation: LogConversation) {
+        // A key but no answer yet (an existing install, or onboarding skipped): ask first and
+        // keep the message. "Calories left?" is answered on the phone, so it needn't wait.
+        consent = AppSettings().aiConsent
+        if hasKey && consent == .unanswered
+            && !(photos.isEmpty && LocalQuery.isRemainingQuestion(draft.trimmingCharacters(in: .whitespacesAndNewlines))) {
+            composerFocused = false
+            askingConsent = true
+            return
+        }
         // A word the keyboard is still suggesting isn't in `draft` yet. Ending editing
         // commits it, as Messages does, then the field is focused again.
         let wasFocused = composerFocused
@@ -421,6 +468,7 @@ struct LogView: View {
         targets = (try? TargetStore.current(on: today, in: context)) ?? .defaults
         eaten = (try? DayTotalsIndex.load(from: today, through: today, in: context))?[today] ?? .zero
         hasKey = APIKeyStore().hasKey
+        consent = settings.aiConsent
         offeringReminder = !settings.reminderOffered && !settings.reminderEnabled && eaten.entryCount > 0
         clipboardHasImage = UIPasteboard.general.hasImages
     }

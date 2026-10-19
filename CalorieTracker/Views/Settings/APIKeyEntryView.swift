@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Paste an Anthropic API key, check it with Anthropic, then save it to the Keychain.
 /// The check lists the models the key can use (free, no tokens) and picks the model if none is set.
-/// Reused by onboarding.
+/// Reused by onboarding. A saved key is followed by the consent screen when there's no Allow yet (issue #28).
 struct APIKeyEntryView: View {
     var title: String
     var onSaved: () -> Void
@@ -12,6 +12,7 @@ struct APIKeyEntryView: View {
     @State private var checking = false
     @State private var failure: AnthropicError?
     @State private var saveError: String?
+    @State private var askingConsent = false
 
     private var cleaned: String { APIKeyStore.clean(key) }
 
@@ -68,6 +69,9 @@ struct APIKeyEntryView: View {
                     .disabled(cleaned.isEmpty || checking)
             }
         }
+        .sheet(isPresented: $askingConsent) {
+            AIConsentView { _ in finish() }
+        }
     }
 
     private func check() async {
@@ -97,6 +101,11 @@ struct APIKeyEntryView: View {
             settings.modelID = ModelRecommendation.resolve(current: settings.modelID, in: models)
         }
         key = ""
+        if AppSettings().aiConsent == .allowed { finish() } else { askingConsent = true }
+    }
+
+    private func finish() {
+        askingConsent = false
         onSaved()
         dismiss()
     }

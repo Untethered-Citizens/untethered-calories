@@ -20,6 +20,8 @@ struct AppSettings {
         static let reminderEnabled = "reminderEnabled"
         static let reminderMinutes = "reminderMinutes"
         static let reminderOffered = "reminderOffered"
+        static let aiConsentAnswer = "aiConsentAnswer"
+        static let aiConsentVersion = "aiConsentVersion"
     }
 
     /// Set once the first-launch flow is finished, so it only shows once.
@@ -50,6 +52,29 @@ struct AppSettings {
     var reminderOffered: Bool {
         get { defaults.bool(forKey: Key.reminderOffered) }
         nonmutating set { defaults.set(newValue, forKey: Key.reminderOffered) }
+    }
+
+    /// Whether the user allowed sending data to Anthropic (issue #28). Stored only on this iPhone.
+    var aiConsent: AIConsent {
+        AIConsent(answer: defaults.string(forKey: Key.aiConsentAnswer), version: defaults.integer(forKey: Key.aiConsentVersion))
+    }
+
+    /// "Allow" on the consent screen, recorded against the version of the list it showed.
+    func allowAI() {
+        defaults.set("allowed", forKey: Key.aiConsentAnswer)
+        defaults.set(AIConsent.currentVersion, forKey: Key.aiConsentVersion)
+    }
+
+    /// "Don't allow", or the Settings switch turned off. Stops every send at once.
+    func declineAI() {
+        defaults.set("declined", forKey: Key.aiConsentAnswer)
+        defaults.set(AIConsent.currentVersion, forKey: Key.aiConsentVersion)
+    }
+
+    /// Forgets the answer, so the screen is shown again. Used when the key is removed.
+    func resetAIConsent() {
+        defaults.removeObject(forKey: Key.aiConsentAnswer)
+        defaults.removeObject(forKey: Key.aiConsentVersion)
     }
 
     /// Days of meal-level detail kept before roll-up (D13).

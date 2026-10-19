@@ -61,6 +61,8 @@ final class LogConversation {
         var canRetry: Bool
         /// The fix is in Settings (no key, or a key Anthropic rejected).
         var needsKey: Bool = false
+        /// Sending to Anthropic isn't allowed (issue #28). The fix is the consent screen.
+        var needsConsent: Bool = false
     }
 
     private(set) var items: [Item] = [] { didSet { persist() } }
@@ -170,6 +172,10 @@ final class LogConversation {
                               canRetry: false, needsKey: true)
             return false
         }
+        guard settings.aiConsent == .allowed else {
+            failure = Self.failure(for: AnthropicError.noConsent)
+            return false
+        }
 
         // A message Anthropic refused outright won't go through by adding to it.
         if let failure, !failure.canRetry, outgoing != nil { startNewConversation() }
@@ -228,7 +234,9 @@ final class LogConversation {
         isSending = true
         failure = nil
         defer { isSending = false }
-        let client = AnthropicClient(apiKey: key, transport: transport)
+        // Asked again before every request, so withdrawing in Settings stops the next one.
+        let client = AnthropicClient(apiKey: key, transport: transport,
+                                     mayCreateMessages: { [settings] in settings.aiConsent == .allowed })
 
         let modelID: String
         do {
@@ -487,6 +495,9 @@ final class LogConversation {
             return Failure(message: "Anthropic is limiting requests right now. Try again \(wait).", canRetry: true)
         case .serverBusy:
             return Failure(message: "Anthropic is busy right now. Tap Retry in a moment.", canRetry: true)
+        case .noConsent:
+            return Failure(message: "Sharing with Anthropic is off, so nothing was sent.",
+                           canRetry: false, needsConsent: true)
         case .billing, .permissionDenied:
             return Failure(message: error.userMessage, canRetry: true)
         case .other(let status, let message):
