@@ -219,10 +219,6 @@ struct LogView: View {
                 Text("Add your AI key (from Anthropic) in Settings to start. You can already ask “calories left?”.")
                     .font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
                     .multilineTextAlignment(.center)
-            } else if consent == .declined {
-                Text("Sharing with Anthropic is off, so logging by conversation is paused. You can still ask “calories left?”.")
-                    .font(.barlow(.footnote)).foregroundStyle(Palette.ochreInk)
-                    .multilineTextAlignment(.center)
             }
         }
         .foregroundStyle(Palette.ink)
@@ -254,7 +250,7 @@ struct LogView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "pause.circle.fill").foregroundStyle(Palette.ochre)
             VStack(alignment: .leading, spacing: 8) {
-                Text("AI logging is off. Nothing is sent to Anthropic. Today, Week, Weight and Trend still work.")
+                Text("AI logging is off. Nothing is sent to Anthropic. Today, Week, Weight and Trend still work, and you can still ask “calories left?”.")
                     .font(.barlow(.footnote))
                 Button("Review and allow") { askingConsent = true }
                     .buttonStyle(.bordered).controlSize(.small)

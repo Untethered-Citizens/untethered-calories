@@ -66,6 +66,9 @@ struct SettingsView: View {
                 settings.lastRetentionPrompt = nil
             }
             .sheet(item: $export) { ShareSheet(items: $0.urls) }
+            .sheet(isPresented: $askingConsent, onDismiss: reloadKey) {
+                AIConsentView { _ in askingConsent = false }
+            }
             .onChange(of: transcriptDays) { _, new in settings.transcriptRetentionDays = new }
             .onChange(of: weightUnit) { _, new in settings.weightUnit = new }
             .onChange(of: reminderTime) { _, new in
@@ -100,9 +103,6 @@ struct SettingsView: View {
             Text(maskedKey == nil || sharing
                  ? "Your key is stored only in this iPhone's Keychain. What you log is sent to Anthropic under your own account and billed to it. Turn off Share with Anthropic to stop sending anything."
                  : "Sharing is off, so nothing is sent to Anthropic and logging by conversation is paused. Everything else still works. Turn it on to see what's sent and allow it.")
-        }
-        .sheet(isPresented: $askingConsent, onDismiss: reloadKey) {
-            AIConsentView { _ in askingConsent = false }
         }
         .confirmationDialog("Remove your AI key?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
             Button("Remove key", role: .destructive, action: removeKey)
