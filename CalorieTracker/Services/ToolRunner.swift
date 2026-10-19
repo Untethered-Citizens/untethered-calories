@@ -244,6 +244,10 @@ struct ToolRunner {
         guard input.calories > 0, input.protein >= 0, input.carbs >= 0, input.fat >= 0 else {
             return .error("Calories must be above zero and macros can't be negative.")
         }
+        guard input.calories >= TargetCalculator.lowestMinimum else {
+            return .error("No card shown: the app doesn't offer daily targets below \(TargetCalculator.lowestMinimum) kcal. "
+                + "Don't propose one. Tell the user briefly that going this low is best done with a doctor or dietitian.")
+        }
         let targets = MacroTargets(calories: input.calories, protein: input.protein, carbs: input.carbs, fat: input.fat)
         return ToolOutcome(text: Self.cardShown,
                            effect: .proposal(.targets(targets, from: from, goalNote: input.goalNote)))

@@ -412,6 +412,23 @@ struct LogConversationTests {
         #expect(try TargetStore.current(on: LocalDate(iso: "2026-09-29")!, in: context).calories == 1900)
     }
 
+    /// Chat-proposed targets follow the calculator's floors (issue #32): under 1,200 is refused,
+    /// 1,200–1,499 shows a card with a warning, 1,500 and up a plain card.
+    @Test(arguments: [(1199, false, false), (1200, true, true), (1499, true, true), (1500, true, false)])
+    func targetFloors(calories: Int, cardShown: Bool, warned: Bool) throws {
+        let runner = ToolRunner(context: context, today: LocalDate(iso: "2026-09-29")!, conversationHasPhoto: false)
+        let json = #"{"calories":\#(calories),"protein":100,"carbs":100,"fat":40,"effective_from":"2026-09-29","goal_note":""}"#
+        let outcome = runner.run(ToolCall(id: "t", name: "propose_targets",
+                                          input: try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))))
+        #expect(outcome.isError == !cardShown)
+        if cardShown {
+            guard case .proposal(.targets(let targets, _, _)) = outcome.effect else { Issue.record("No card"); return }
+            #expect(TargetCalculator.isLowTarget(targets.calories) == warned)
+        } else {
+            #expect(outcome.text.contains("doctor or dietitian"))
+        }
+    }
+
     @Test func usualMealCardSavesTheMeal() async throws {
         let input = #"{"name":"Usual lunch","trigger_phrases":["my normal lunch"],"meal":"Lunch","description":"Frozen curry","calories":470,"protein":14,"carbs":66,"fat":19,"source":"Label","contains_alcohol":false}"#
         let stub = StubTransport([.http(200, reply([toolUse("toolu_1", "add_usual_meal", input)], stop: "tool_use"))])

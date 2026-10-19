@@ -79,6 +79,17 @@ enum TargetCalculator {
     /// Common guidance: don't go below these without a professional's supervision.
     static func minimumCalories(for sex: Sex) -> Int { sex == .female ? 1200 : 1500 }
 
+    /// Targets proposed in the chat, where the app doesn't know the user's sex (issue #32):
+    /// below the lowest floor is refused; below the highest gets `lowTargetNote` on the card.
+    static var lowestMinimum: Int { Sex.allCases.map(minimumCalories).min()! }
+    static var highestMinimum: Int { Sex.allCases.map(minimumCalories).max()! }
+
+    static func isLowTarget(_ calories: Int) -> Bool { calories < highestMinimum }
+
+    static var lowTargetNote: String {
+        "This is a low target. Going below \(highestMinimum.formatted()) calories is best done with a doctor or dietitian."
+    }
+
     /// Protein 1.6 g per kg of body weight, fat 30% of calories, carbs the rest.
     static let proteinPerKg = 1.6
     static let fatShare = 0.30

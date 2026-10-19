@@ -54,4 +54,11 @@ struct TargetCalculatorTests {
     @Test func heightConversion() {
         #expect(abs(TargetCalculator.cm(feet: 6, inches: 0) - 182.88) < 0.001)
     }
+
+    @Test func chatFloorsComeFromTheCalculator() {
+        #expect(TargetCalculator.lowestMinimum == TargetCalculator.minimumCalories(for: .female))
+        #expect(TargetCalculator.highestMinimum == TargetCalculator.minimumCalories(for: .male))
+        #expect(TargetCalculator.lowTargetNote.contains(TargetCalculator.highestMinimum.formatted()))
+        #expect(SystemPrompt.text.contains("below \(TargetCalculator.lowestMinimum) a day"))
+    }
 }
