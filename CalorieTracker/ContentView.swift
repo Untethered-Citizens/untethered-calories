@@ -45,7 +45,7 @@ struct ContentView: View {
         }
     }
 
-    private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "maintenance")
+    private static let log = Logger(subsystem: "com.untetheredcitizens.calories", category: "maintenance")
 
     /// On launch, every return to the foreground and at midnight: fold meal detail older than
     /// the window into daily summaries (D51), bring in weight from Health, then check for

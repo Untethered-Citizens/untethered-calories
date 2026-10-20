@@ -70,7 +70,7 @@ struct ChatTranscript: Codable {
 /// It's protected with the phone's passcode like the rest of the app's data.
 final class ChatStore {
     let url: URL
-    private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "chat")
+    private static let log = Logger(subsystem: "com.untetheredcitizens.calories", category: "chat")
 
     init(url: URL) {
         self.url = url
