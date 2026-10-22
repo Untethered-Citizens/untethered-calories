@@ -6,15 +6,28 @@ import Testing
 struct ModelPricingTests {
     @Test func pricesEachTokenKindAtItsOwnRate() throws {
         let sonnet = try #require(ModelPricing.forModel("claude-sonnet-5-5"))
-        // 1M each: $2 input + $10 output + $2.50 cache write + $0.20 cache read.
+        // 1M each: $2 input + $10 output + $2.50 cache write + $0.10 cache read.
         let million = TokenCounts(input: 1_000_000, output: 1_000_000, cacheWrite: 1_000_000, cacheRead: 1_000_000)
-        #expect(abs(sonnet.cost(of: million) - 14.70) < 0.000_001)
+        #expect(abs(sonnet.cost(of: million) - 14.60) < 0.000_001)
     }
 
     @Test func cacheReadRatesDifferByModel() throws {
         #expect(ModelPricing.forModel("claude-opus-5-5")?.cacheRead == 0.20)   // 0.05x of $4
+        #expect(ModelPricing.forModel("claude-sonnet-5-5")?.cacheRead == 0.10) // 0.05x of $2
         #expect(ModelPricing.forModel("claude-fable-5-1")?.cacheRead == 0.25)  // 0.025x of $10
         #expect(ModelPricing.forModel("claude-haiku-4-5")?.cacheRead == 0.10)  // 0.1x of $1
+    }
+
+    @Test func pricesHaiku55AtTheUpTo100kRate() throws {
+        let haiku = try #require(ModelPricing.forModel("claude-haiku-5-5"))
+        // 1M each: $0.10 input + $0.50 output + $0.125 cache write + $0.01 cache read.
+        let million = TokenCounts(input: 1_000_000, output: 1_000_000, cacheWrite: 1_000_000, cacheRead: 1_000_000)
+        #expect(abs(haiku.cost(of: million) - 0.735) < 0.000_001)
+    }
+
+    @Test func pricesTheOlderModelsStillInThePicker() {
+        #expect(ModelPricing.forModel("claude-opus-4-5")?.input == 5)
+        #expect(ModelPricing.forModel("claude-sonnet-4-5")?.input == 3)
     }
 
     @Test func matchesADatedSnapshotButNotAnotherModel() {
