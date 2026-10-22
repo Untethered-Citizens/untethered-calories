@@ -22,7 +22,7 @@ struct TokenCounts: Equatable, Sendable {
 /// date below. The bill in the Anthropic Console is the real figure; this is an estimate, and
 /// a model that isn't listed gets token counts only, never a guessed price.
 struct ModelPricing: Equatable, Sendable {
-    static let asOf = LocalDate(year: 2026, month: 10, day: 2)!
+    static let asOf = LocalDate(year: 2026, month: 10, day: 22)!
 
     var input: Double
     var output: Double
@@ -31,7 +31,8 @@ struct ModelPricing: Equatable, Sendable {
     var cacheRead: Double
 
     /// Standard first-party API rates. Cache writes are 1.25x input for the 5-minute duration;
-    /// cache reads are 0.1x input except where the page says otherwise.
+    /// cache reads are 0.1x input except where the page says otherwise. Haiku 5.5 charges more for
+    /// prompts over 100,000 tokens; the app's prompts are a few thousand, so it uses the lower rate.
     static let table: [String: ModelPricing] = [
         "claude-fable-5-1": ModelPricing(input: 10, output: 50, cacheWrite: 12.50, cacheRead: 0.25),
         "claude-fable-5": ModelPricing(input: 10, output: 50, cacheWrite: 12.50, cacheRead: 1),
@@ -40,9 +41,12 @@ struct ModelPricing: Equatable, Sendable {
         "claude-opus-4-8": ModelPricing(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50),
         "claude-opus-4-7": ModelPricing(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50),
         "claude-opus-4-6": ModelPricing(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50),
-        "claude-sonnet-5-5": ModelPricing(input: 2, output: 10, cacheWrite: 2.50, cacheRead: 0.20),
+        "claude-opus-4-5": ModelPricing(input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50),
+        "claude-sonnet-5-5": ModelPricing(input: 2, output: 10, cacheWrite: 2.50, cacheRead: 0.10),
         "claude-sonnet-5": ModelPricing(input: 2, output: 10, cacheWrite: 2.50, cacheRead: 0.20),
         "claude-sonnet-4-6": ModelPricing(input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.30),
+        "claude-sonnet-4-5": ModelPricing(input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.30),
+        "claude-haiku-5-5": ModelPricing(input: 0.10, output: 0.50, cacheWrite: 0.125, cacheRead: 0.01),
         "claude-haiku-4-5": ModelPricing(input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.10),
     ]
 
