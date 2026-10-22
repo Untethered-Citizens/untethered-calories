@@ -99,7 +99,7 @@ final class LogConversation {
     private let store: ChatStore?
     private var restoring = false
 
-    private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "api")
+    private static let log = Logger(subsystem: "com.untetheredcitizens.calories", category: "api")
 
     /// A conversation older than this, or from another day, starts afresh.
     static let idleLimit: TimeInterval = 30 * 60

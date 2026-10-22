@@ -25,7 +25,7 @@ final class HealthWeight {
     private let store = HKHealthStore()
     private let bodyMass = HKQuantityType(.bodyMass)
     private var syncing = false
-    private static let log = Logger(subsystem: "com.frees321.calorietracker", category: "health")
+    private static let log = Logger(subsystem: "com.untetheredcitizens.calories", category: "health")
 
     func refreshStatus() async {
         guard isAvailable else { return }
