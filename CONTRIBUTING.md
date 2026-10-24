@@ -12,7 +12,8 @@ Thanks for your interest. This is a small project with one maintainer, so the pr
 3. **Make small commits** with imperative messages ("Add weight unit setting").
 4. **Before opening the pull request:** the app builds, all tests pass, new logic has tests, and UI changes have been checked in the simulator (light and dark mode where it matters).
 5. **Open the pull request** and fill in the template. Put `Closes #N` on its own line.
-6. **Review.** The maintainer reviews every pull request and may ask for changes. CI must pass. Only the maintainer merges, using squash merge.
+6. **CI.** GitHub Actions builds the app and runs the tests on every pull request, and shows the result on it. It must be green (✅) before merging.
+7. **Review.** The maintainer reviews every pull request and may ask for changes. Only the maintainer merges, using squash merge.
 
 First-time contributors: GitHub waits for the maintainer to approve before running CI on your first pull request. That's normal.
 

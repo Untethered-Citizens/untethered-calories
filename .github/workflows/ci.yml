@@ -1,0 +1,50 @@
+# Builds the app and runs the tests on every pull request to main and every push to main.
+# Needs no secrets: the tests never call Anthropic.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to a branch cancels its older, unfinished run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test
+    # GitHub's Xcode 27 image; the standard macOS images only have Xcode 26.
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DESTINATION: platform=iOS Simulator,name=iPhone 17
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build
+        run: >
+          xcodebuild build-for-testing
+          -project CalorieTracker.xcodeproj
+          -scheme CalorieTracker
+          -destination "$DESTINATION"
+
+      # Parallel testing clones the simulator, and on this image the clone fails
+      # (its paired Apple Watch simulator has no runtime installed).
+      - name: Test
+        run: >
+          xcodebuild test-without-building
+          -project CalorieTracker.xcodeproj
+          -scheme CalorieTracker
+          -destination "$DESTINATION"
+          -parallel-testing-enabled NO
