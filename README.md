@@ -7,6 +7,8 @@
 
 <h1 align="center">Untethered Calories</h1>
 
+<p align="center"><a href="https://github.com/Untethered-Citizens/untethered-calories/actions/workflows/ci.yml"><img src="https://github.com/Untethered-Citizens/untethered-calories/actions/workflows/ci.yml/badge.svg" alt="CI status"></a></p>
+
 <p align="center"><b>Food log · bring your own AI</b><br>
 A calorie and macro tracker for iPhone where logging is a conversation, not a form.</p>
 
