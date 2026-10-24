@@ -65,7 +65,7 @@ Your food log and settings stay on your iPhone.
 
 ## Status
 
-In active development and in personal beta. An App Store release is coming. This repository is the app's source code.
+Version 1.0 has been submitted to the App Store, where it will be free. This repository is the app's source code.
 
 ## Building from source
 
@@ -81,6 +81,10 @@ xcodebuild -project CalorieTracker.xcodeproj -scheme CalorieTracker -destination
 
 No API key is needed to build or run the tests. Add your own key in the app's Settings to try logging. Never commit a key.
 
+## Contributing
+
+Bug reports and ideas are welcome. Please open an issue first and agree the change before opening a pull request. [CONTRIBUTING.md](CONTRIBUTING.md) explains the process, and [ARCHITECTURE.md](ARCHITECTURE.md) explains how the code is organised and the rules it follows. To report a security problem, see [SECURITY.md](SECURITY.md).
+
 ## More
 
 - Website: [untetheredcalories.com](https://untetheredcalories.com/)
@@ -92,3 +96,7 @@ No API key is needed to build or run the tests. Add your own key in the app's Se
 Made by [Untethered Citizens](https://github.com/Untethered-Citizens), tools for living on your own terms.
 
 The app uses the [Barlow](https://github.com/jpt/barlow) and Barlow Condensed typefaces by The Barlow Project Authors, under the SIL Open Font License 1.1 (`CalorieTracker/Resources/Fonts/OFL.txt`).
+
+## Licence
+
+The code is licensed under the [Apache License 2.0](LICENSE). The name "Untethered Calories", the app icon and the Untethered Citizens branding are not covered by the licence. If you publish your own version, please give it a different name and icon.
