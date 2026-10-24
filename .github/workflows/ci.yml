@@ -39,9 +39,12 @@ jobs:
           -scheme CalorieTracker
           -destination "$DESTINATION"
 
+      # Parallel testing clones the simulator, and on this image the clone fails
+      # (its paired Apple Watch simulator has no runtime installed).
       - name: Test
         run: >
           xcodebuild test-without-building
           -project CalorieTracker.xcodeproj
           -scheme CalorieTracker
           -destination "$DESTINATION"
+          -parallel-testing-enabled NO
