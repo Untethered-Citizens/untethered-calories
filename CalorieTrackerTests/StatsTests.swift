@@ -29,6 +29,16 @@ struct StatsTests {
         #expect(Rounding.nearest5(0) == 0)
     }
 
+    /// Issue #46: this used to trap on a non-finite or huge value.
+    @Test func roundingNeverTraps() {
+        #expect(Rounding.nearest5(.infinity) == 0)
+        #expect(Rounding.nearest5(-.infinity) == 0)
+        #expect(Rounding.nearest5(.nan) == 0)
+        #expect(Rounding.nearest5(2.5e19) > 4_000_000_000_000_000_000)
+        #expect(Rounding.nearest5(-2.5e19) < -4_000_000_000_000_000_000)
+        #expect(Rounding.nearest5(-12.5) == -15)
+    }
+
     @Test func targetHistoryJudgesEachDayByItsOwnTargets() {
         let old = MacroTargets(calories: 2000, protein: 120, carbs: 200, fat: 70)
         let periods = [TargetPeriod(effectiveFrom: LocalDate(iso: "2026-09-24")!, targets: .defaults),

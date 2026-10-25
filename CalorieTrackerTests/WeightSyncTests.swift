@@ -34,6 +34,25 @@ struct WeightImportTests {
         #expect(WeightImport.dailyLatest(samples, in: newYork).values.first == 170.9)
     }
 
+    /// Issue #46: another app can write anything to Health. Readings a typed weight couldn't
+    /// be are ignored, and the day's plausible reading (if any) still counts.
+    @Test func implausibleReadingsAreIgnored() {
+        let samples = [
+            WeightSample(taken: at("2026-09-20", 7), pounds: 172.0),
+            WeightSample(taken: at("2026-09-20", 21), pounds: 1e17),
+            WeightSample(taken: at("2026-09-21", 7), pounds: .infinity),
+            WeightSample(taken: at("2026-09-22", 7), pounds: .nan),
+            WeightSample(taken: at("2026-09-23", 7), pounds: 12),
+        ]
+        #expect(WeightImport.dailyLatest(samples, in: newYork) == [LocalDate(iso: "2026-09-20")!: 172.0])
+    }
+
+    @Test func plausibleRangeEdgesAreKept() {
+        let samples = [WeightSample(taken: at("2026-09-20", 7), pounds: 50),
+                       WeightSample(taken: at("2026-09-21", 7), pounds: 700)]
+        #expect(WeightImport.dailyLatest(samples, in: newYork).count == 2)
+    }
+
     @Test func windowCountsTodayAsDayOne() {
         let today = LocalDate(iso: "2026-10-02")!
         #expect(WeightImport.windowStart(today: today).days(until: today) == WeightImport.windowDays - 1)
