@@ -13,10 +13,11 @@ enum WeightImport {
     static let windowDays = 90
 
     /// The latest weigh-in on each local calendar day, to one decimal. A reading belongs to
-    /// the day it was taken, not to today.
+    /// the day it was taken, not to today. Any app can write to Health, so readings outside
+    /// the range a typed weight must fall in are ignored, as if they weren't there (#46).
     static func dailyLatest(_ samples: [WeightSample], in timeZone: TimeZone) -> [LocalDate: Double] {
         var latest: [LocalDate: WeightSample] = [:]
-        for sample in samples {
+        for sample in samples where sample.pounds.isFinite && WeightEntry.plausiblePounds.contains(sample.pounds) {
             let day = LocalDate(sample.taken, in: timeZone)
             if let kept = latest[day], kept.taken >= sample.taken { continue }
             latest[day] = sample

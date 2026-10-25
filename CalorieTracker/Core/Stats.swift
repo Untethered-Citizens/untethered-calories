@@ -156,7 +156,12 @@ struct WeekStats: Equatable, Sendable {
 
 enum Rounding {
     /// Rounds to the nearest multiple of 5, with halves going up (1,792.5 → 1,795).
+    /// Never traps (#46): a non-finite value gives 0, and one too large for `Int` is clamped.
     static func nearest5(_ value: Double) -> Int {
-        Int((value / 5).rounded(.toNearestOrAwayFromZero)) * 5
+        guard value.isFinite else { return 0 }
+        let fives = (value / 5).rounded(.toNearestOrAwayFromZero)
+        // Well inside Int: Double(Int.max / 5) rounds up, and × 5 would overflow.
+        let limit = Double(Int.max / 10)
+        return Int(min(max(fives, -limit), limit)) * 5
     }
 }

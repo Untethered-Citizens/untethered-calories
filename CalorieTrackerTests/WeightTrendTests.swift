@@ -78,6 +78,16 @@ struct WeightTrendTests {
         #expect(balance.estimatedMaintenance == 2300)
     }
 
+    /// Issue #46: a stored weight from before the import filter (or otherwise corrupt) must
+    /// not crash the Trend tab. The audit's case: over two weeks at 170 lb, then a week at 1e17 lb.
+    @Test func extremeStoredWeightsDoNotCrashTheEnergyBalance() throws {
+        let readings = (0...22).map { reading($0, $0 <= 6 ? 1e17 : 170) }
+        let totals = [today.adding(days: -10): NutritionTotals(calories: 2000, entryCount: 1)]
+        let series = WeightSeries(readings: readings, firstLoggingDay: nil, today: today)
+        let balance = try #require(EnergyBalance(series: series, dayTotals: totals, today: today))
+        #expect(balance.impliedDailyBalance != 0)
+    }
+
     @Test func noEnergyBalanceOnAShortStretch() {
         let readings = (0...10).map { reading($0, 170) }
         let totals = [today.adding(days: -1): NutritionTotals(calories: 1800, entryCount: 3)]
