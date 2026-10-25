@@ -93,6 +93,8 @@ enum UsualMealStore {
             "Add a description."
         case .negativeValue(let field):
             "\(field.capitalized) can't be negative."
+        case .tooLarge(let field, let limit):
+            "\(field.capitalized) can be at most \(limit.formatted())\(field == "calories" ? "" : " g")."
         case .macroMismatch(let stated, let fromMacros):
             "The macros add up to \(fromMacros) calories, too far from \(stated). Check the numbers, or turn on Contains alcohol if it does."
         case .sourceMismatch, .needsConfirmation:

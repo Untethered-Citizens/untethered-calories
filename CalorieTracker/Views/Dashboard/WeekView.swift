@@ -244,8 +244,10 @@ struct WeekChart: View {
 
     /// Top of the calorie axis: at least 1.4× the target, and always 12% above the tallest bar
     /// so the value drawn above it isn't clipped by the plot edge (issue #20).
+    /// Clamped, so a corrupt stored value can't trap the conversion back to Int (#42).
     static func scaleTop(target: Int, highest: Int) -> Int {
-        max(Int(Double(target) * 1.4), Int((Double(highest) * 1.12).rounded(.up)))
+        let top = max((Double(target) * 1.4).rounded(.down), (Double(highest) * 1.12).rounded(.up))
+        return top < Double(Int.max) ? Int(top) : .max
     }
 
     var body: some View {

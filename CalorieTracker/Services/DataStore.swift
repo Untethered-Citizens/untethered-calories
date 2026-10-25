@@ -87,6 +87,16 @@ enum EntryWriter {
     }
 }
 
+/// Targets above the app's limits (#42), whichever screen or card they came from.
+struct TargetsRejected: LocalizedError, Equatable {
+    let issues: [IntegrityIssue]
+
+    var errorDescription: String? {
+        "Daily targets can be at most \(Integrity.maxCalories.formatted()) calories, and at most "
+            + "\(Integrity.maxGrams.formatted()) g each of protein, carbs and fat."
+    }
+}
+
 /// Current and historical targets from the store.
 enum TargetStore {
     static func periods(in context: ModelContext) throws -> [TargetPeriod] {
@@ -107,9 +117,13 @@ enum TargetStore {
 
     /// Records new targets from `date` onward, keeping earlier versions as history.
     /// A second change on the same day edits that day's version instead of adding another.
-    /// Setting the targets that already apply is a no-op.
+    /// Setting the targets that already apply is a no-op. Throws `TargetsRejected` and
+    /// changes nothing if a value is over the limits.
     static func set(_ targets: MacroTargets, goalNote: String = "", from date: LocalDate,
                     in context: ModelContext) throws {
+        let tooLarge = Integrity.sizeIssues(calories: targets.calories, protein: targets.protein,
+                                            carbs: targets.carbs, fat: targets.fat)
+        guard tooLarge.isEmpty else { throw TargetsRejected(issues: tooLarge) }
         let key = date.iso
         var descriptor = FetchDescriptor<Targets>(predicate: #Predicate { $0.effectiveFromKey == key })
         descriptor.fetchLimit = 1

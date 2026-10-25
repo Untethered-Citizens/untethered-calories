@@ -323,6 +323,8 @@ struct EntryEditView: View {
                     return "it needs a description"
                 case .negativeValue(let field):
                     return "\(field) can't be negative"
+                case .tooLarge(let field, let limit):
+                    return "\(field) can be at most \(limit.formatted())\(field == "calories" ? " cal" : " g")"
                 case .macroMismatch(let stated, let fromMacros):
                     return "protein, carbs and fat add up to \(fromMacros.formatted()) cal, but calories say \(stated.formatted()) cal"
                 case .sourceMismatch, .needsConfirmation:

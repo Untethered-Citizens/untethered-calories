@@ -47,6 +47,8 @@ enum LogPath: Sendable {
 enum IntegrityIssue: Equatable, Sendable {
     case emptyDescription
     case negativeValue(field: String)
+    /// Above the app's limit for one entry, usual meal or day's targets (#42).
+    case tooLarge(field: String, limit: Int)
     /// `4P + 4C + 9F` is too far from the stated calories. Values have probably
     /// landed in the wrong fields.
     case macroMismatch(statedCalories: Int, macroCalories: Int)
@@ -63,8 +65,27 @@ enum Integrity {
     /// rounded to whole grams) aren't rejected over rounding.
     static let absoluteSlack = 10
 
+    /// Upper limits for one entry, one usual meal, and a day's targets (#42). Far above any
+    /// real meal, and far below where adding up a day could overflow. Typed numbers are
+    /// already short (NumberField); these also cover numbers that come from the model.
+    static let maxCalories = 20_000
+    static let maxGrams = 5_000
+
+    /// `.tooLarge` for each value above its limit.
+    static func sizeIssues(calories: Int, protein: Int, carbs: Int, fat: Int) -> [IntegrityIssue] {
+        [("calories", calories, maxCalories), ("protein", protein, maxGrams),
+         ("carbs", carbs, maxGrams), ("fat", fat, maxGrams)]
+            .filter { $0.1 > $0.2 }
+            .map { .tooLarge(field: $0.0, limit: $0.2) }
+    }
+
+    /// Saturates instead of trapping, so a corrupt value can't crash the check that
+    /// would refuse it, or a screen that shows it.
     static func macroCalories(protein: Int, carbs: Int, fat: Int) -> Int {
-        4 * protein + 4 * carbs + 9 * fat
+        let sum = 4 * Double(protein) + 4 * Double(carbs) + 9 * Double(fat)
+        if sum >= Double(Int.max) { return .max }
+        if sum <= Double(Int.min) { return .min }
+        return Int(sum)
     }
 
     /// Returns the mismatch, if any. Entries flagged `containsAlcohol` are exempt,
@@ -73,9 +94,9 @@ enum Integrity {
     static func macroIssue(_ item: some NutritionItem) -> IntegrityIssue? {
         guard !item.containsAlcohol else { return nil }
         let fromMacros = macroCalories(protein: item.protein, carbs: item.carbs, fat: item.fat)
-        let gap = abs(fromMacros - item.calories)
-        if gap <= absoluteSlack { return nil }
-        if item.calories > 0, Double(gap) / Double(item.calories) <= tolerance { return nil }
+        let gap = abs(Double(fromMacros) - Double(item.calories))
+        if gap <= Double(absoluteSlack) { return nil }
+        if item.calories > 0, gap / Double(item.calories) <= tolerance { return nil }
         return .macroMismatch(statedCalories: item.calories, macroCalories: fromMacros)
     }
 
@@ -101,7 +122,10 @@ enum Integrity {
                               ("carbs", draft.carbs), ("fat", draft.fat)] where value < 0 {
             found.append(.negativeValue(field: name))
         }
-        if let mismatch = macroIssue(draft) { found.append(mismatch) }
+        let tooLarge = sizeIssues(calories: draft.calories, protein: draft.protein, carbs: draft.carbs, fat: draft.fat)
+        found += tooLarge
+        // A ratio check on numbers already refused for size would only add noise.
+        if tooLarge.isEmpty, let mismatch = macroIssue(draft) { found.append(mismatch) }
         if draft.source != origin.requiredSource {
             found.append(.sourceMismatch(expected: origin.requiredSource, got: draft.source))
         }
