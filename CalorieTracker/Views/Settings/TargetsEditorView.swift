@@ -93,6 +93,8 @@ struct TargetsEditorView: View {
                                 from: today, in: context)
             onSaved()
             dismiss()
+        } catch let rejected as TargetsRejected {
+            self.error = rejected.errorDescription
         } catch {
             self.error = "Couldn't save your targets."
         }

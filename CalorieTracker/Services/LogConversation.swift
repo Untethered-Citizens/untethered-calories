@@ -357,6 +357,8 @@ final class LogConversation {
                 try TargetStore.set(targets, goalNote: goalNote, from: from, in: context)
                 finish(id, line: from == today ? "Targets updated from today." : "Targets updated from \(LogText().dayName(from)).",
                        note: "The user applied the proposed targets (\(targets.calories) kcal, \(targets.protein)p/\(targets.carbs)c/\(targets.fat)f from \(from.iso)).")
+            } catch let rejected as TargetsRejected {
+                failure = Failure(message: rejected.errorDescription ?? "Couldn't save the targets.", canRetry: false)
             } catch {
                 failure = Failure(message: "Couldn't save the targets: \(error.localizedDescription)", canRetry: false)
             }

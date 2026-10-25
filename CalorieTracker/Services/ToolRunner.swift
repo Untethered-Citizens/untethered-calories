@@ -244,6 +244,11 @@ struct ToolRunner {
         guard input.calories > 0, input.protein >= 0, input.carbs >= 0, input.fat >= 0 else {
             return .error("Calories must be above zero and macros can't be negative.")
         }
+        guard Integrity.sizeIssues(calories: input.calories, protein: input.protein,
+                                   carbs: input.carbs, fat: input.fat).isEmpty else {
+            return .error("No card shown: daily targets can be at most \(Integrity.maxCalories) kcal "
+                + "and \(Integrity.maxGrams) g each of protein, carbs and fat. Check the numbers.")
+        }
         guard input.calories >= TargetCalculator.lowestMinimum else {
             return .error("No card shown: the app doesn't offer daily targets below \(TargetCalculator.lowestMinimum) kcal. "
                 + "Don't propose one. Tell the user briefly that going this low is best done with a doctor or dietitian.")
@@ -261,6 +266,11 @@ struct ToolRunner {
         let draft = EntryDraft(date: today, meal: meal, description: input.description,
                                calories: input.calories, protein: input.protein, carbs: input.carbs,
                                fat: input.fat, source: source, containsAlcohol: input.containsAlcohol)
+        guard Integrity.sizeIssues(calories: input.calories, protein: input.protein,
+                                   carbs: input.carbs, fat: input.fat).isEmpty else {
+            return .error("A usual meal can be at most \(Integrity.maxCalories) kcal and \(Integrity.maxGrams) g "
+                + "each of protein, carbs and fat. Check the numbers.")
+        }
         if let issue = Integrity.macroIssue(draft), case .macroMismatch(let stated, let macros) = issue {
             return .error("4×protein + 4×carbs + 9×fat = \(macros) kcal, but calories = \(stated). Fix the numbers (or set contains_alcohol).")
         }
@@ -300,6 +310,8 @@ struct ToolRunner {
                     lines.append("\(label): description is empty.")
                 case .negativeValue(let field):
                     lines.append("\(label): \(field) is negative.")
+                case .tooLarge(let field, let limit):
+                    lines.append("\(label): \(field) is above the app's limit of \(limit) per entry. Check the number.")
                 case .macroMismatch(let stated, let macros):
                     lines.append("\(label): 4×protein + 4×carbs + 9×fat = \(macros) kcal, but calories = \(stated), more than 15% apart. Values may be in the wrong fields. If it contains alcohol, set contains_alcohol.")
                 case .sourceMismatch(let expected, let got):
