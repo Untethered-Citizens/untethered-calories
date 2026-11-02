@@ -67,7 +67,9 @@ Your food log and settings stay on your iPhone.
 
 ## Status
 
-Version 1.0 has been submitted to the App Store, where it will be free. This repository is the app's source code.
+Untethered Calories is available free on the [App Store](https://apps.apple.com/us/app/untethered-calories/id6825672256). This repository is the app's source code.
+
+<a href="https://apps.apple.com/us/app/untethered-calories/id6825672256"><img src="docs/images/download-on-the-app-store.svg" alt="Download on the App Store" height="40"></a>
 
 ## Building from source
 
