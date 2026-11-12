@@ -16,6 +16,9 @@ struct LogView: View {
     @State private var showingLibrary = false
     @State private var showingCamera = false
     @State private var clipboardHasImage = UIPasteboard.general.hasImages
+    /// The clipboard's change count when its photo was last pasted here, so the paste bar
+    /// doesn't keep offering the same photo.
+    @State private var pastedChangeCount: Int?
     @State private var showingSettings = false
     @State private var editing: UUID?
     @State private var hasKey = APIKeyStore().hasKey
@@ -27,7 +30,7 @@ struct LogView: View {
     @State private var eaten = NutritionTotals.zero
     @State private var offeringReminder = false
 
-    @FocusState private var composerFocused: Bool
+    @State private var composerFocused = false
 
     var body: some View {
         NavigationStack {
@@ -336,6 +339,7 @@ struct LogView: View {
 
     private func composer(_ conversation: LogConversation) -> some View {
         VStack(spacing: 8) {
+            if offersPaste(conversation) { pasteBar }
             if !photos.isEmpty {
                 PhotoStrip(photos: photos, size: 56) { index in photos.remove(at: index) }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -363,11 +367,16 @@ struct LogView: View {
                 .disabled(!conversation.acceptsPhotos || photos.count >= PhotoPrep.maxPhotosPerMessage)
                 .accessibilityLabel("Add photo")
 
-                TextField("What did you eat?", text: $draft, axis: .vertical)
-                    .lineLimit(1...5)
-                    // Grows with the text however it arrives (dictation included), up to five lines (issue #6).
+                // Grows with the text however it arrives (dictation included), up to five lines (issue #6).
+                // Long-press → Paste with a photo copied attaches the photo (issue #66).
+                ComposerTextView(
+                    text: $draft, isFocused: $composerFocused, placeholder: "What did you eat?",
+                    onPasteImages: canAddPhoto(conversation) ? { images in
+                        pastedChangeCount = UIPasteboard.general.changeCount
+                        images.forEach(addPhoto)
+                    } : nil
+                )
                     .fixedSize(horizontal: false, vertical: true)
-                    .focused($composerFocused)
                     .padding(.horizontal, 16).padding(.vertical, 11)
                     .background(Palette.panel, in: .rect(cornerRadius: 22))
                     .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Palette.rule))
@@ -387,6 +396,35 @@ struct LogView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Palette.background)
+    }
+
+    private func canAddPhoto(_ conversation: LogConversation) -> Bool {
+        conversation.acceptsPhotos && photos.count < PhotoPrep.maxPhotosPerMessage
+    }
+
+    /// A photo is on the clipboard and the keyboard is up: say so, as the Claude app does (issue #66).
+    /// Checking the change count, like checking for an image, doesn't read the clipboard.
+    private func offersPaste(_ conversation: LogConversation) -> Bool {
+        composerFocused && clipboardHasImage && canAddPhoto(conversation)
+            && pastedChangeCount != UIPasteboard.general.changeCount
+    }
+
+    private var pasteBar: some View {
+        HStack(spacing: 10) {
+            Label("You copied a photo", systemImage: "photo.on.rectangle")
+                .font(.barlow(.footnote))
+                .foregroundStyle(Palette.muted)
+            Spacer(minLength: 8)
+            // The system Paste button reads the clipboard without an "Allow Paste?" prompt.
+            PasteButton(supportedContentTypes: [.image]) { providers in pastePhotos(providers) }
+                .labelStyle(.titleAndIcon)
+                .buttonBorderShape(.capsule)
+                .tint(Palette.green)
+        }
+        .padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 6)
+        .background(Palette.panel, in: Capsule())
+        .overlay(Capsule().strokeBorder(Palette.rule))
+        .transition(.opacity)
     }
 
     private func send(_ conversation: LogConversation) {
@@ -426,6 +464,7 @@ struct LogView: View {
     }
 
     private func pastePhotos(_ providers: [NSItemProvider]) {
+        pastedChangeCount = UIPasteboard.general.changeCount
         for provider in providers {
             _ = provider.loadDataRepresentation(for: .image) { data, _ in
                 guard let data, let image = UIImage(data: data) else { return }
