@@ -13,7 +13,7 @@ struct CaloriesLeftWidget: Widget {
                 .widgetURL(WidgetLink.log)
         }
         .configurationDisplayName("Calories left")
-        .description("Calories left today, today's steps from Apple Health, or both. Tap to log what you ate.")
+        .description("Calories left today, today's steps from Health, or both. Tap to log what you ate.")
         .supportedFamilies([.systemSmall])
     }
 }

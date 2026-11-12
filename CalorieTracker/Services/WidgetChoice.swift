@@ -22,7 +22,7 @@ enum WidgetShows: String, AppEnum {
 /// The widget's Edit menu: Calories left, Steps or Both.
 struct WidgetChoiceIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Choose what to show"
-    static let description = IntentDescription("Show calories left today, today's steps from Apple Health, or both.")
+    static let description = IntentDescription("Show calories left today, today's steps from Health, or both.")
 
     @Parameter(title: "Show", default: .calories)
     var shows: WidgetShows
