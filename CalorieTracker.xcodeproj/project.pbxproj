@@ -53,6 +53,9 @@
 			membershipExceptions = (
 				Core/LocalDate.swift,
 				Core/WidgetSnapshot.swift,
+				Core/WidgetSteps.swift,
+				Services/StepsReader.swift,
+				Services/WidgetChoice.swift,
 				"Resources/Fonts/Barlow-Medium.ttf",
 				"Resources/Fonts/BarlowCondensed-SemiBold.ttf",
 			);
@@ -365,7 +368,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Calories;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of a meal or a nutrition label to log it.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read your weight from Apple Health to show your weight trend beside what you eat. If you allow sharing with Anthropic, weights may be sent to answer your questions.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read your weight from Apple Health to show your weight trend beside what you eat. If you allow sharing with Anthropic, weights may be sent to answer your questions. Steps are read only to show in the Home Screen widget, and are never sent.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save the weights you enter in Untethered Calories to Apple Health, alongside readings from your scale.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -398,7 +401,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Calories;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo of a meal or a nutrition label to log it.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read your weight from Apple Health to show your weight trend beside what you eat. If you allow sharing with Anthropic, weights may be sent to answer your questions.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Read your weight from Apple Health to show your weight trend beside what you eat. If you allow sharing with Anthropic, weights may be sent to answer your questions. Steps are read only to show in the Home Screen widget, and are never sent.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Save the weights you enter in Untethered Calories to Apple Health, alongside readings from your scale.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

@@ -250,11 +250,12 @@ struct SettingsView: View {
                 }
             } else {
                 LabeledContent("Weight", value: "Syncs when the app opens")
+                LabeledContent("Steps", value: "Shown in the widget only")
             }
         } header: {
             Text("Apple Health")
         } footer: {
-            Text("The app reads your weight (the last reading of each day, for the last 90 days). It writes only the weights you add on the Weight tab. If you allow sharing with Anthropic, weights can be sent to answer your questions about earlier days. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: \(HealthWeight.accessPath).")
+            Text("The app reads your weight (the last reading of each day, for the last 90 days). It writes only the weights you add on the Weight tab. It also reads today's steps, but only to show them in the Home Screen widget if you choose Steps there; steps are never sent to Anthropic. If you allow sharing with Anthropic, weights can be sent to answer your questions about earlier days. When iOS asks how much data to share, All Recorded Data brings in the full 90 days. To change access: \(HealthWeight.accessPath).")
         }
     }
 
