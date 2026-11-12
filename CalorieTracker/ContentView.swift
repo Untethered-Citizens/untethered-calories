@@ -76,6 +76,7 @@ struct ContentView: View {
         }
         await health.sync(into: context, today: clock.today, timeZone: settings.timeZone)
         WidgetPublisher.publish(in: context, settings: settings)
+        await health.refreshSteps(timeZone: settings.timeZone)
         checkRetention(settings)
         await ReminderScheduler.reschedule(in: context, settings: settings)
     }

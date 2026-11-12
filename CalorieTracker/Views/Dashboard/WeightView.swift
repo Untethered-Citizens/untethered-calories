@@ -123,7 +123,7 @@ struct WeightView: View {
                 Text("Weight comes from Apple Health, which isn't available on this device.")
                     .foregroundStyle(Palette.muted)
             } else if health.needsRequest {
-                Text("Your weight lives in Apple Health, so readings from a smart scale and the ones you add here end up in the same place. Connect once, then add a weight here or just weigh in.\n\nWhen iOS asks, allow Weight for both reading and writing, and choose All Recorded Data to bring in your last 90 days.")
+                Text("Your weight lives in Apple Health, so readings from a smart scale and the ones you add here end up in the same place. Connect once, then add a weight here or just weigh in.\n\nWhen iOS asks, allow Weight for both reading and writing, and choose All Recorded Data to bring in your last 90 days. Steps are only for the Home Screen widget, so allow them if you want steps there.")
                     .foregroundStyle(Palette.muted)
                 Button("Connect Apple Health") {
                     Task {

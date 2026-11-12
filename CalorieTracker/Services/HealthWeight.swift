@@ -2,6 +2,7 @@ import Foundation
 import HealthKit
 import OSLog
 import SwiftData
+import WidgetKit
 
 /// Reads weight from Apple Health, and saves the weights the user types in (D50). Health is
 /// the one place weight lives; the app keeps a copy per day.
@@ -37,16 +38,35 @@ final class HealthWeight {
         }
     }
 
-    /// Shows the permission sheet (read, and save for typed-in weights), then brings weights in.
+    /// Shows the permission sheet (read, and save for typed-in weights, plus reading Steps for
+    /// the widget, #16), then brings weights in.
     func connect(into context: ModelContext, today: LocalDate, timeZone: TimeZone) async {
         guard isAvailable else { return }
         do {
-            try await store.requestAuthorization(toShare: [bodyMass], read: [bodyMass])
+            try await store.requestAuthorization(toShare: [bodyMass], read: [bodyMass, StepsReader.stepCount])
         } catch {
             Self.log.error("Health request failed: \(error.localizedDescription, privacy: .public)")
         }
         await refreshStatus()
         await sync(into: context, today: today, timeZone: timeZone)
+    }
+
+    /// For people who connected Health before Steps existed (or never connected it): asks for
+    /// Steps only once a widget is set to show them, so nobody gets an unexplained sheet.
+    /// Then reads today's steps for the widget. Never asks if a widget doesn't need them.
+    func refreshSteps(timeZone: TimeZone) async {
+        guard isAvailable else { return }
+        let wanted = await WidgetChoiceIntent.anyPlacedWidgetShowsSteps()
+        if wanted, !(await StepsReader.hasAsked(store: store)) {
+            do {
+                try await store.requestAuthorization(toShare: [], read: [StepsReader.stepCount])
+            } catch {
+                Self.log.error("Steps request failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        guard wanted else { return }
+        await StepsReader.refresh(timeZone: timeZone)
+        WidgetCenter.shared.reloadTimelines(ofKind: WidgetShare.caloriesKind)
     }
 
     enum SaveError: LocalizedError {
