@@ -438,8 +438,8 @@ struct LogView: View {
             return
         }
         // A word the keyboard is still suggesting isn't in `draft` yet. Ending editing
-        // commits it, as Messages does, then the field is focused again.
-        let wasFocused = composerFocused
+        // commits it, as Messages does. The keyboard then stays down so the message and
+        // the reply are in view; tapping the field brings it back (issue #67).
         composerFocused = false
         Task {
             try? await Task.sleep(for: .milliseconds(50))
@@ -448,7 +448,6 @@ struct LogView: View {
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !attached.isEmpty else { return }
             draft = ""
             photos = []
-            composerFocused = wasFocused
             let taken = await conversation.send(text, photos: attached)
             if !taken {
                 // Nothing went out (no key yet): give the text back.
