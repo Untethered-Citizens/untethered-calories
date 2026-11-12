@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var clock = DayClock()
     @State private var health = HealthWeight()
     @State private var retentionDue = 0
+    @State private var composerFocus = ComposerFocusRequest()
 
     var body: some View {
         TabView(selection: $selected) {
@@ -26,6 +27,13 @@ struct ContentView: View {
         .tint(Palette.green)
         .environment(clock)
         .environment(health)
+        .environment(composerFocus)
+        // The Home Screen widget opens the Log tab, ready to type (D94).
+        .onOpenURL { url in
+            guard WidgetLink.opensLog(url) else { return }
+            selected = .log
+            composerFocus.request()
+        }
         .sheet(isPresented: Binding(get: { retentionDue > 0 }, set: { if !$0 { retentionDue = 0 } })) {
             if let keep = AppSettings().summaryRetentionDays {
                 RetentionPromptView(dueCount: retentionDue, keepDays: keep, today: clock.today)
@@ -39,8 +47,10 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
             Task { await refresh() }
         }
-        // Logging or deleting today's food changes whether today's reminder is needed (D73).
+        // Logging or deleting today's food changes whether today's reminder is needed (D73),
+        // and what the widget shows (D93).
         .onReceive(NotificationCenter.default.publisher(for: ModelContext.didSave)) { _ in
+            WidgetPublisher.publish(in: context)
             Task { await ReminderScheduler.reschedule(in: context) }
         }
     }
@@ -49,7 +59,8 @@ struct ContentView: View {
 
     /// On launch, every return to the foreground and at midnight: fold meal detail older than
     /// the window into daily summaries (D51), bring in weight from Health, then check for
-    /// daily totals past the retention setting (D52), and refresh the daily reminder (D73).
+    /// daily totals past the retention setting (D52), and refresh the daily reminder (D73)
+    /// and the widget (D93).
     private func refresh() async {
         clock.refresh()
         let settings = AppSettings()
@@ -64,6 +75,7 @@ struct ContentView: View {
             Self.log.error("Roll-up failed: \(error.localizedDescription, privacy: .public)")
         }
         await health.sync(into: context, today: clock.today, timeZone: settings.timeZone)
+        WidgetPublisher.publish(in: context, settings: settings)
         checkRetention(settings)
         await ReminderScheduler.reschedule(in: context, settings: settings)
     }

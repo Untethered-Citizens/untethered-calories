@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CA0000000000000000000115 /* CalorieTrackerWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CA0000000000000000000013 /* CalorieTrackerWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CA0000000000000000000301 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -14,22 +18,65 @@
 			remoteGlobalIDString = CA0000000000000000000101;
 			remoteInfo = CalorieTracker;
 		};
+		CA0000000000000000000303 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CA0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CA0000000000000000000401;
+			remoteInfo = CalorieTrackerWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CA0000000000000000000114 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CA0000000000000000000115 /* CalorieTrackerWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		CA0000000000000000000011 /* CalorieTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalorieTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA0000000000000000000012 /* CalorieTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalorieTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA0000000000000000000013 /* CalorieTrackerWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CalorieTrackerWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CA0000000000000000000024 /* Exceptions for "CalorieTracker" folder in "CalorieTrackerWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Core/LocalDate.swift,
+				Core/WidgetSnapshot.swift,
+				"Resources/Fonts/Barlow-Medium.ttf",
+				"Resources/Fonts/BarlowCondensed-SemiBold.ttf",
+			);
+			target = CA0000000000000000000401 /* CalorieTrackerWidget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CA0000000000000000000021 /* CalorieTracker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CA0000000000000000000024 /* Exceptions for "CalorieTracker" folder in "CalorieTrackerWidget" target */,
+			);
 			path = CalorieTracker;
 			sourceTree = "<group>";
 		};
 		CA0000000000000000000022 /* CalorieTrackerTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CalorieTrackerTests;
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000023 /* CalorieTrackerWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CalorieTrackerWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -49,6 +96,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA0000000000000000000412 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -57,6 +111,7 @@
 			children = (
 				CA0000000000000000000021 /* CalorieTracker */,
 				CA0000000000000000000022 /* CalorieTrackerTests */,
+				CA0000000000000000000023 /* CalorieTrackerWidget */,
 				CA0000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -66,6 +121,7 @@
 			children = (
 				CA0000000000000000000011 /* CalorieTracker.app */,
 				CA0000000000000000000012 /* CalorieTrackerTests.xctest */,
+				CA0000000000000000000013 /* CalorieTrackerWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,10 +136,12 @@
 				CA0000000000000000000111 /* Sources */,
 				CA0000000000000000000112 /* Frameworks */,
 				CA0000000000000000000113 /* Resources */,
+				CA0000000000000000000114 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CA0000000000000000000304 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				CA0000000000000000000021 /* CalorieTracker */,
@@ -118,6 +176,28 @@
 			productReference = CA0000000000000000000012 /* CalorieTrackerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		CA0000000000000000000401 /* CalorieTrackerWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA0000000000000000000503 /* Build configuration list for PBXNativeTarget "CalorieTrackerWidget" */;
+			buildPhases = (
+				CA0000000000000000000411 /* Sources */,
+				CA0000000000000000000412 /* Frameworks */,
+				CA0000000000000000000413 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CA0000000000000000000023 /* CalorieTrackerWidget */,
+			);
+			name = CalorieTrackerWidget;
+			packageProductDependencies = (
+			);
+			productName = CalorieTrackerWidget;
+			productReference = CA0000000000000000000013 /* CalorieTrackerWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -134,6 +214,9 @@
 					CA0000000000000000000201 = {
 						CreatedOnToolsVersion = 27.0;
 						TestTargetID = CA0000000000000000000101;
+					};
+					CA0000000000000000000401 = {
+						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
@@ -153,6 +236,7 @@
 			targets = (
 				CA0000000000000000000101 /* CalorieTracker */,
 				CA0000000000000000000201 /* CalorieTrackerTests */,
+				CA0000000000000000000401 /* CalorieTrackerWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -166,6 +250,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CA0000000000000000000213 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0000000000000000000413 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -189,6 +280,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA0000000000000000000411 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -196,6 +294,11 @@
 			isa = PBXTargetDependency;
 			target = CA0000000000000000000101 /* CalorieTracker */;
 			targetProxy = CA0000000000000000000301 /* PBXContainerItemProxy */;
+		};
+		CA0000000000000000000304 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CA0000000000000000000401 /* CalorieTrackerWidget */;
+			targetProxy = CA0000000000000000000303 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -348,6 +451,60 @@
 			};
 			name = Release;
 		};
+		CA0000000000000000000631 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = CalorieTrackerWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = Q474PMN335;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "CalorieTrackerWidget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Calories;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.untetheredcitizens.calories.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		CA0000000000000000000632 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = CalorieTrackerWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = Q474PMN335;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "CalorieTrackerWidget-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Calories;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.untetheredcitizens.calories.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -374,6 +531,15 @@
 			buildConfigurations = (
 				CA0000000000000000000621 /* Debug */,
 				CA0000000000000000000622 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0000000000000000000503 /* Build configuration list for PBXNativeTarget "CalorieTrackerWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA0000000000000000000631 /* Debug */,
+				CA0000000000000000000632 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

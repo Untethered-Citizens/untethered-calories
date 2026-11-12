@@ -31,6 +31,8 @@ struct LogView: View {
     @State private var offeringReminder = false
 
     @State private var composerFocused = false
+    /// Set when the widget opens the app (D94); absent in previews.
+    @Environment(ComposerFocusRequest.self) private var focusRequest: ComposerFocusRequest?
 
     var body: some View {
         NavigationStack {
@@ -90,9 +92,11 @@ struct LogView: View {
             clipboardHasImage = UIPasteboard.general.hasImages
         }
         .onAppear(perform: refresh) // entries may have been edited on another tab
+        .onChange(of: focusRequest?.pending) { _, _ in takeFocusRequest() }
         .task {
             if conversation == nil { conversation = LogConversation(context: context, store: .standard) }
             refresh()
+            takeFocusRequest()
         }
     }
 
@@ -494,6 +498,12 @@ struct LogView: View {
                 try conversation.acceptEdited(id, drafts: drafts)
             }
         }
+    }
+
+    /// Puts the cursor in the composer when the widget asked for it.
+    private func takeFocusRequest() {
+        guard conversation != nil, focusRequest?.take() == true else { return }
+        composerFocused = true
     }
 
     private func refresh() {
